@@ -1,0 +1,54 @@
+{%- for type_ in types %}
+{{ type_ }}FieldType = TypeVar('{{ type_ }}FieldType')
+{{ type_ }}SelectionType = TypeVar('{{ type_ }}SelectionType')
+
+
+@dataclass
+class {{ type_ }}(metaclass=GeneratedType):
+    class Field(Generic[{{ type_ }}FieldType]):
+        pass
+
+    {{ '__graphql_map__ = {' }}{%  for field in type_.fields %}
+        '{{ underscore(field) }}': '{{ field }}'{% if not loop.last %}{{ ', ' }}{% endif %}
+    {%- endfor %}
+    {{ '}' }}
+
+    {% for field_name, field in type_.fields.items() -%}
+        {{ underscore(field_name) }}{{ ': ' }}
+        {%- if get_type(field.type, constants.selection).rstrip(']').endswith(constants.selection.value) -%}
+            {%- set f_type = get_type(field.type, constants.selection.value + '[Field]', enquote=True, strip_class=True) -%}
+            {{ f_type }}
+        {%- else %}Field[{{ get_type(field.type, constants.selection, strip_class=True) }}]{% endif %}
+    {% endfor %}
+
+class {{ type_ }}Selection(Generic[{{ type_ }}SelectionType]):
+    def __init__(self, calling_field: str):
+        self.calling_field = calling_field
+        self.finish_select = lambda: None
+
+    def select(self, *fields: {{ get_type(type_, strip_class=True, suffix='.Field') }}) -> {{ type_ }}SelectionType:
+        graphql_fields = [{{ get_type(type_, strip_class=True) }}{{'.__graphql_map__'}}[f] for f in fields if isinstance(f, str)]
+        nested_selects = [lambda s: f.finish_select(getattr(s.{{ get_type(type_, strip_class=True) }}, f.calling_field), s)  # type: ignore
+                          for f in fields if not isinstance(f, str)]
+        self.finish_select = partial_select([lambda s: getattr(s.{{ get_type(type_, strip_class=True) }}, f) for f in graphql_fields] + nested_selects)
+        return self
+
+{% endfor %}
+{%- for type_ in union_types %}
+{{ type_ }}FieldType = TypeVar('{{ type_ }}FieldType')
+{{ type_ }}SelectionType = TypeVar('{{ type_ }}SelectionType')
+
+
+@dataclass
+class {{ type_ }}(metaclass=GeneratedType):
+    class Field(Generic[{{ type_ }}FieldType]):
+        pass
+
+    {{ '__graphql_map__ = {' }}
+    {{ '}' }}
+
+class {{ type_ }}Selection(Generic[{{ type_ }}SelectionType]):
+    def select(self, *fields: {{ type_ }}.Field) -> {{ type_ }}SelectionType:
+        return
+
+{% endfor %}

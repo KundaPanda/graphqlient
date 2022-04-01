@@ -1,0 +1,125 @@
+import enum
+import inspect
+from dataclasses import dataclass, field
+from functools import partial
+from graphql import print_ast
+from pathlib import Path
+from typing import Any, Generic, List, Optional, Protocol, Type, TypeVar, Union
+
+import gql
+from gql.dsl import DSLSchema, dsl_gql, DSLQuery
+from gql.transport.aiohttp import AIOHTTPTransport
+from gql.utilities import build_client_schema
+from graphql.utilities import get_introspection_query
+
+
+class Empty:
+    pass
+
+
+EMPTY = Empty
+
+
+class Executable:
+    def __init__(self, selection):
+        self._query = selection.query
+        self.client = selection.client
+
+    @property
+    def query_ast(self):
+        return dsl_gql(DSLQuery(self._query))
+
+    @property
+    def query(self):
+        return print_ast(self.query_ast)
+
+    def execute(self):
+        return self.client.client.execute(self.query_ast)
+
+
+class QueryableField:
+    def __call__(self, *args, return_type: Type, **kwargs):
+        client, schema, query, *_ = args
+        return return_type(client, schema, query, **kwargs)
+
+
+class GeneratedType(type):
+    __graphql_map__: dict
+    Field: type
+
+    def __getattr__(self, item):
+        if item not in self.__graphql_map__:
+            return getattr(super(), item)
+        if '[Field]' not in str(self.__annotations__[item]):
+            return self.__graphql_map__[item]
+        cls_ = globals().get(self.__annotations__[item].replace('[Field]', ''))
+        if not cls_:
+            return self.__graphql_map__[item]
+        return cls_[self.Field](self.__graphql_map__[item])
+
+
+class InputType:
+    pass
+
+
+def partial_select(field_factories: List[Any]):
+    def select(calling_field: Any, schema: DSLSchema):
+        return calling_field.select(*[factory(schema) for factory in field_factories])
+    return select
+
+{% include 'enum_types.py.jinja2' %}
+
+{% include 'all_types.py.jinja2' %}
+
+{% include 'input_types.py.jinja2' %}
+
+{% include 'queryable_types.py.jinja2' %}
+
+class Query:
+    {{'__graphql_map__ = {'}}{%  for field in fields %}
+        '{{ underscore(field.name) }}': '{{ field.name }}'{% if not loop.last %}{{ ', ' }}{% endif %}
+    {%- endfor %}
+    }
+
+    def __init__(self, client: 'Client') -> None:
+        self.schema = client.schema
+        self.client = client
+
+    def __getattribute__(self, item):
+        if item == '__annotations__':
+            return super(Query, self).__getattribute__(item)
+        item_type = self.__annotations__.get(item)
+        if not item_type or not issubclass(item_type, QueryableField):
+            return super(Query, self).__getattribute__(item)
+        field = super().__getattribute__(item)
+        graphql_name = self.__graphql_map__.get(item)
+        return partial(field, self.client, self.schema, getattr(self.schema.Query, graphql_name))
+
+{% set union_type_names = union_types | map(attribute='name') | list %}
+{%- for field in fields -%}
+{%- set is_union = get_type(field.type, strip_class=True) in union_type_names %}
+{%- if is_union %}
+    {%- set f_type = camelize(field.name + constants.field.__str__()) -%}
+{%- else %}
+    {%- set f_type = camelize(field.name + constants.field.__str__()) -%}
+{%- endif -%}
+    {{ '    ' }}{{ underscore(field.name) }}: {{ f_type }} = {{ f_type }}()
+{% endfor %}
+
+class Client:
+    def __init__(self, url=None, schema=None, **kwargs):
+        if not url and not schema:
+            raise ValueError('Either url or schema must be provided')
+        if schema and Path(schema).exists():
+            self.graphql_schema =  Path(schema).read_text()
+        if url:
+            client = gql.Client(transport=AIOHTTPTransport(url=url, **kwargs))
+            self.graphql_schema = client.execute(gql.gql(get_introspection_query()))
+        self.graphql_schema = build_client_schema(self.graphql_schema)
+        self.schema = DSLSchema(self.graphql_schema)
+        self.client = gql.Client(transport=AIOHTTPTransport(url=url, **kwargs))
+
+    @property
+    def query(self) -> Query:
+        return Query(client=self)
+
