@@ -31,6 +31,7 @@ class Constants(enum.Enum):
     selection = 'Selection'
     root_selection = 'RootSelection'
     field = 'Field'
+    queryable_field = 'QueryableField'
 
     def __str__(self):
         return self.value
@@ -143,6 +144,10 @@ def my_camelize(value):
     return camelize(value)
 
 
+def get_union_types(type_: GraphQLUnionType):
+    return 'Union[' + ', '.join('Type[' + get_type(sub_type, strip_class=True) + ']' for sub_type in type_.types) + ']'
+
+
 code = query_template.render(
     fields=fields,
     types=types,
@@ -152,6 +157,7 @@ code = query_template.render(
     get_type=get_type,
     constants=Constants,
     get_graphql_types=get_graphql_types,
+    get_union_types=get_union_types,
     camelize=my_camelize,
     underscore=my_underscore,
     builtins=BUILTIN_NAMES,

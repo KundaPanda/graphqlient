@@ -11,8 +11,8 @@
 {%- endif -%}
 class {{ camelize(field.name) }}RootSelection:
     def __init__(self, client: 'Client', schema: DSLSchema, query: Any, **kwargs) -> None:
-        {{ 'graphql_kwargs = {'}}{{ camelize(field.name) + constants.field.__str__() }}{{'.__graphql_map__'}}[k]: (v if not isinstance(v, InputType) else v.to_graphql(schema))
-            for k, v in kwargs.items() if v != EMPTY}
+        {{ 'graphql_kwargs = {'}}{{ camelize(field.name) + constants.queryable_field.__str__() }}{{'.__graphql_map__'}}[k]: (v if not isinstance(v, InputType) else v.to_graphql(schema))
+                          for k, v in kwargs.items() if v != EMPTY}
         self.query = query
         if graphql_kwargs:
             self.query = self.query(**graphql_kwargs)
@@ -20,19 +20,26 @@ class {{ camelize(field.name) }}RootSelection:
         self.client = client
 
     {% set type_name = get_type(field.type, strip_class=True) -%}
-    def select(self, *fields: {{ get_type(field.type, strip_class=True, suffix='.Field') }}) -> Executable:
-        graphql_fields = [{{ type_name }}{{'.__graphql_map__'}}[f] for f in fields if isinstance(f, str)]
-        nested_selects = [f.finish_select(getattr(self.schema.{{ type_name }}, f.calling_field), self.schema) for f in fields if not isinstance(f, str)] # type: ignore
+    {% set field_type = get_type(field.type, strip_class=True, suffix='Field') -%}
+    def select(self, *fields: {{ field_type }}) -> Executable:
+        graphql_fields = [f.field_name for f in fields if isinstance(f, {{ field_type }})]
+        nested_fields = []
+        for f in fields:
+            if isinstance(f, {{ field_type }}):
+                continue
+            if f.calling_field is not None:
+                nested_fields.append(f.finish_select(getattr(self.schema.{{ field_type | replace('Field', '') }}, f.calling_field), self.schema))
+            else:
+                fragment = DSLInlineFragment()
+                nested_fields.append(f.finish_select(fragment.on(getattr(self.schema, f.__class__.__name__.replace('{{ constants.selection }}', ''))), self.schema))
         self.query = self.query.select(*[getattr(self.schema.{{ type_name }}, f) for f in graphql_fields],
-                                       *nested_selects)
+                                       *nested_fields)
         return Executable(self)
-{% if is_union -%}
-    {% set return_type = 'Union[' + (union_type[-1].types | map(attribute='name') | join(', ')) + ']' %}
-{%- else -%}
-    {% set return_type = camelize(field.name) + constants.root_selection.__str__() %}
-{%- endif %}
 
-class {{ camelize(field.name) }}Field(QueryableField):
+{%- set return_type = camelize(field.name) + constants.root_selection.__str__() %}
+
+
+class {{ camelize(field.name) }}QueryableField(QueryableField):
     {{ '__graphql_map__ = {' }}{%  for arg in field.args %}
         '{{ underscore(arg) }}': '{{ arg }}'{% if not loop.last %}{{ ', ' }}{% endif %}
     {%- endfor %}

@@ -1,13 +1,13 @@
 import enum
 import inspect
 from dataclasses import dataclass, field
-from functools import partial
+from functools import partial, singledispatch
 from graphql import print_ast
 from pathlib import Path
-from typing import Any, Generic, List, Optional, Protocol, Type, TypeVar, Union
+from typing import Any, Callable, Dict, ForwardRef, Generic, List, Optional, Protocol, Type, TypeVar, Union, overload
 
 import gql
-from gql.dsl import DSLSchema, dsl_gql, DSLQuery
+from gql.dsl import DSLSchema, dsl_gql, DSLInlineFragment, DSLQuery
 from gql.transport.aiohttp import AIOHTTPTransport
 from gql.utilities import build_client_schema
 from graphql.utilities import get_introspection_query
@@ -30,10 +30,10 @@ class Executable:
         return dsl_gql(DSLQuery(self._query))
 
     @property
-    def query(self):
+    def query(self) -> str:
         return print_ast(self.query_ast)
 
-    def execute(self):
+    def execute(self) -> Dict[str, Any]:
         return self.client.client.execute(self.query_ast)
 
 
@@ -44,18 +44,14 @@ class QueryableField:
 
 
 class GeneratedType(type):
-    __graphql_map__: dict
     Field: type
 
+
+class GeneratedUnionType(GeneratedType):
     def __getattr__(self, item):
-        if item not in self.__graphql_map__:
-            return getattr(super(), item)
-        if '[Field]' not in str(self.__annotations__[item]):
-            return self.__graphql_map__[item]
-        cls_ = globals().get(self.__annotations__[item].replace('[Field]', ''))
-        if not cls_:
-            return self.__graphql_map__[item]
-        return cls_[self.Field](self.__graphql_map__[item])
+        if item == 'on':
+            return self.OnFragment
+        return super().__getattr__(item)
 
 
 class InputType:
@@ -99,9 +95,9 @@ class Query:
 {%- for field in fields -%}
 {%- set is_union = get_type(field.type, strip_class=True) in union_type_names %}
 {%- if is_union %}
-    {%- set f_type = camelize(field.name + constants.field.__str__()) -%}
+    {%- set f_type = camelize(field.name + constants.queryable_field.__str__()) -%}
 {%- else %}
-    {%- set f_type = camelize(field.name + constants.field.__str__()) -%}
+    {%- set f_type = camelize(field.name + constants.queryable_field.__str__()) -%}
 {%- endif -%}
     {{ '    ' }}{{ underscore(field.name) }}: {{ f_type }} = {{ f_type }}()
 {% endfor %}
