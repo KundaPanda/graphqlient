@@ -1,4 +1,6 @@
 {%- for type_ in input_types %}
+
+
 @dataclass
 class {{type_}}(InputType):
     {{ '__graphql_map__ = {' }}{%  for field in type_.fields %}
@@ -17,4 +19,4 @@ class {{type_}}(InputType):
                 values[k] = values[k].to_graphql(schema)
         return values
 
-{% endfor %}
+{%- endfor %}

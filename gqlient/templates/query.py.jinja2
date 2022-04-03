@@ -1,17 +1,13 @@
 import asyncio
 import enum
-import inspect
-from dataclasses import dataclass, field
-from functools import partial, singledispatch
+from dataclasses import dataclass
+from functools import partial
 from graphql import print_ast
-from pathlib import Path
-from typing import Any, Callable, Dict, ForwardRef, Generic, List, Optional, Protocol, Type, TypeVar, Union, overload
+from typing import Any, Dict, ForwardRef, Generic, List, Optional, Type, TypeVar, Union, get_type_hints, overload
 
 import gql
 from gql.dsl import DSLSchema, dsl_gql, DSLInlineFragment, DSLQuery
 from gql.transport.aiohttp import AIOHTTPTransport
-from gql.utilities import build_client_schema
-from graphql.utilities import get_introspection_query
 
 
 class Empty:
@@ -52,14 +48,14 @@ class GeneratedUnionType(GeneratedType):
     def __getattr__(self, item):
         if item == 'on':
             return self.OnFragment
-        return super().__getattr__(item)
+        return getattr(super(), item)
 
 
 class GeneratedInterfaceType(GeneratedType):
     def __getattr__(self, item):
         if item == 'on':
             return self.OnFragment
-        return super().__getattr__(item)
+        return getattr(super(), item)
 
 
 class InputType:
@@ -71,13 +67,13 @@ def partial_select(field_factories: List[Any]):
         return calling_field.select(*[factory(schema) for factory in field_factories])
     return select
 
-{% include 'enum_types.py.jinja2' %}
+{%- include 'enum_types.py.jinja2' %}
 
-{% include 'all_types.py.jinja2' %}
+{%- include 'all_types.py.jinja2' %}
 
-{% include 'input_types.py.jinja2' %}
+{%- include 'input_types.py.jinja2' %}
 
-{% include 'queryable_types.py.jinja2' %}
+{%- include 'queryable_types.py.jinja2' %}
 
 class Query:
     {{'__graphql_map__ = {'}}{%  for field in fields %}
@@ -122,7 +118,6 @@ class Client:
             await s.fetch_schema()
         self.graphql_schema = self.client.schema
         self.schema = DSLSchema(self.graphql_schema)
-
 
     @property
     def query(self) -> Query:

@@ -13,7 +13,9 @@ All fields are annotated with types, IDE auto-completion and hints should work.
 - [x] Simple queries
 - [x] Actually creating and executing queries
 - [x] Nested fields
-- [ ] Fragments, Unions, Interfaces
+- [x] Fragments, Unions, Interfaces
+- [ ] Class renaming
+- [ ] Conditional imports
 - [ ] Mutations
 - [ ] Tests
 - [ ] Structured jinja templates

@@ -1,5 +1,5 @@
 {%- set union_type_names = union_types | map(attribute='name') | list %}
-{%- for field in fields %}
+{% for field in fields %}
 {%- set is_union = get_type(field.type, strip_class=True) in union_type_names %}
 {%- set union_type = [None] %}
 {%- if is_union -%}
@@ -8,7 +8,8 @@
             {%- set _ = union_type.append(union_type_) %}
         {%- endif %}
     {%- endfor -%}
-{%- endif -%}
+{% endif %}
+
 class {{ camelize(field.name) }}RootSelection:
     def __init__(self, client: 'Client', schema: DSLSchema, query: Any, **kwargs) -> None:
         {{ 'graphql_kwargs = {'}}{{ camelize(field.name) + constants.queryable_field.__str__() }}{{'.__graphql_map__'}}[k]: (v if not isinstance(v, InputType) else v.to_graphql(schema))
@@ -53,6 +54,4 @@ class {{ camelize(field.name) }}QueryableField(QueryableField):
         return super().__call__(*args, return_type={{ return_type }}, {% for name in field.args -%}
     {{ underscore(name) }}={{ underscore(name) }}{% if not loop.last %}{{ ', ' }}{% endif %}
 {%- endfor %})
-
-
 {% endfor %}

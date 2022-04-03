@@ -1,4 +1,6 @@
+
 {% for enum_type in enum_types %}
+
 class {{enum_type}}(enum.Enum):
     {{ '__graphql_map__ = {' }}{%  for field in enum_type.values %}
         '{{ underscore(field) }}': '{{ field }}'{% if not loop.last %}{{ ', ' }}{% endif %}
@@ -8,4 +10,4 @@ class {{enum_type}}(enum.Enum):
     {% for field_name, enum_value in enum_type.values.items() -%}
     {{ underscore(field_name) }} = '{{enum_value.value}}'
     {% endfor %}
-{%  endfor %}
+{%-  endfor %}
