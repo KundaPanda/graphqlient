@@ -1,12 +1,6 @@
-import pytest
-
-
-@pytest.mark.usefixtures('generate_client')
 class TestSimpleQueries:
-    def test_query(self):
-        from generated.client_code import Client, Job, Country, City, Tag
-
-        client = Client('http://localhost:9002/graphql')
+    def test_query(self, client):
+        from generated.client_code import City, Country, Job, Tag
         query = client.query.jobs(
         ).select(
             Job.description,
@@ -26,6 +20,37 @@ class TestSimpleQueries:
                 Tag.name,
                 Tag.jobs.select(
                     Job.is_featured
+                )
+            )
+        )
+
+        assert query.query
+        assert not query.execute().get('errors')
+
+    def test_interface(self, client):
+        from generated.client_code import City, Country, CustomInterface
+        query = client.query.interfaces(
+        ).select(
+            CustomInterface.name,
+            CustomInterface.on(Country).select(
+                Country.name,
+                Country.cities.select(
+                    City.name
+                )
+            )
+        )
+
+        assert query.query
+        assert not query.execute().get('errors')
+
+    def test_union(self, client):
+        from generated.client_code import City, Country, CustomUnion
+        query = client.query.unions(
+        ).select(
+            CustomUnion.on(Country).select(
+                Country.name,
+                Country.cities.select(
+                    City.name
                 )
             )
         )

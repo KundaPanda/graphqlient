@@ -12,10 +12,10 @@ from gql.transport.aiohttp import AIOHTTPTransport
 from gql.utilities import build_client_schema
 from graphql import (
     GraphQLEnumType, GraphQLField,
-    GraphQLInputObjectType, GraphQLObjectType,
+    GraphQLInputObjectType, GraphQLInterfaceType, GraphQLObjectType,
     GraphQLUnionType,
     build_schema,
-    is_enum_type, is_input_object_type, is_list_type,
+    is_enum_type, is_input_object_type, is_interface_type, is_list_type,
     is_non_null_type,
     is_object_type,
     is_scalar_type,
@@ -73,7 +73,8 @@ def get_type(type_, suffix=Constants.empty, enquote=False, strip_class=False, le
 
 def load_defined_types(object_type: GraphQLObjectType, types: Set[GraphQLObjectType],
                        input_types: Set[GraphQLInputObjectType],
-                       enum_types: Set[GraphQLEnumType], union_types: Set[GraphQLUnionType]):
+                       enum_types: Set[GraphQLEnumType], union_types: Set[GraphQLUnionType],
+                       interface_types: Set[GraphQLInterfaceType]):
     field: GraphQLField
     for field in object_type.fields.values():
         types_ = get_graphql_types(field.type)
@@ -84,15 +85,19 @@ def load_defined_types(object_type: GraphQLObjectType, types: Set[GraphQLObjectT
                 if actual_type not in union_types:
                     union_types.add(actual_type)
                     for subtype in actual_type.types:
-                        load_defined_types(subtype, types, input_types, enum_types, union_types)
+                        load_defined_types(subtype, types, input_types, enum_types, union_types, interface_types)
+            elif is_interface_type(actual_type):
+                if actual_type not in interface_types:
+                    interface_types.add(actual_type)
+                    load_defined_types(actual_type, types, input_types, enum_types, union_types, interface_types)
             elif is_object_type(actual_type):
                 if actual_type not in types:
                     types.add(actual_type)
-                    load_defined_types(actual_type, types, input_types, enum_types, union_types)
+                    load_defined_types(actual_type, types, input_types, enum_types, union_types, interface_types)
             elif is_input_object_type(actual_type):
                 if actual_type not in input_types:
                     input_types.add(actual_type)
-                    load_defined_types(actual_type, types, input_types, enum_types, union_types)
+                    load_defined_types(actual_type, types, input_types, enum_types, union_types, interface_types)
             elif is_enum_type(actual_type):
                 if actual_type not in enum_types:
                     enum_types.add(actual_type)
@@ -124,6 +129,10 @@ def get_union_types(type_: GraphQLUnionType):
     return 'Union[' + ', '.join('Type[' + get_type(sub_type, strip_class=True) + ']' for sub_type in type_.types) + ']'
 
 
+def get_interface_types(type_: GraphQLInterfaceType):
+    return get_union_types(type_)
+
+
 def generate(schema: Union[Path, str],
              client_output: Optional[Union[str, Path]] = None,
              write_schema: Optional[Union[str, Path]] = None) -> str:
@@ -144,8 +153,11 @@ def generate(schema: Union[Path, str],
     input_types = set()
     enum_types = set()
     union_types = set()
+    interface_types = set()
     query = cast(GraphQLObjectType, graphql_schema.type_map["Query"])
-    load_defined_types(query, types, input_types, enum_types, union_types)
+    load_defined_types(query, types, input_types, enum_types, union_types, interface_types)
+    for t in interface_types:
+        setattr(t, 'types', [type_ for type_ in types if t in type_.interfaces])
     fields = [
         {
             "name": name,
@@ -162,10 +174,12 @@ def generate(schema: Union[Path, str],
         input_types=sorted(input_types, key=lambda t: t.name),
         enum_types=sorted(enum_types, key=lambda t: t.name),
         union_types=sorted(union_types, key=lambda t: t.name),
+        interface_types=sorted(interface_types, key=lambda t: t.name),
         get_type=get_type,
         constants=Constants,
         get_graphql_types=get_graphql_types,
         get_union_types=get_union_types,
+        get_interface_types=get_interface_types,
         camelize=my_camelize,
         underscore=my_underscore,
         builtins=BUILTIN_NAMES,

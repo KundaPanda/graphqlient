@@ -11,7 +11,12 @@ directive @listLength(max: Int!, min: Int!) on FIELD_DEFINITION
 
 directive @examples(values: [examples__JSON]!) on SCALAR | FIELD_DEFINITION
 
-type City {
+interface CustomInterface {
+    id: ID!
+    name: String!
+}
+
+type City implements CustomInterface{
     country: Country!
     createdAt: DateTime!
     id: ID!
@@ -31,7 +36,7 @@ type Commitment {
     updatedAt: DateTime!
 }
 
-type Company {
+type Company implements CustomInterface {
     createdAt: DateTime!
     emailed: Boolean
     id: ID!
@@ -44,7 +49,7 @@ type Company {
     websiteUrl: String!
 }
 
-type Country {
+type Country implements CustomInterface{
     cities(after: String, before: String, first: Int, last: Int, orderBy: CityOrderByInput, skip: Int, where: CityWhereInput): [City!]
     createdAt: DateTime!
     id: ID!
@@ -84,6 +89,8 @@ type Location {
     type: String!
 }
 
+union CustomUnion = Job | Company | Country | City
+
 type Mutation {
     postJob(input: PostJobInput!): Job!
     subscribe(input: SubscribeInput!): User!
@@ -103,6 +110,8 @@ type Query {
     locations(input: LocationsInput!): [Location!]!
     remote(input: LocationInput!): Remote!
     remotes: [Remote!]!
+    interfaces(input: InterfaceInput): [CustomInterface!]!
+    unions(input: UnionInput): [CustomUnion!]!
 }
 
 type Remote {
@@ -1098,4 +1107,12 @@ input fake__options {
     randomizeImageUrl: Boolean
     "Only for type `streetAddress`"
     useFullAddress: Boolean
+}
+
+input InterfaceInput {
+    id: ID!
+}
+
+input UnionInput {
+    id: ID!
 }

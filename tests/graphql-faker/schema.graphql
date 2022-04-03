@@ -5,7 +5,12 @@ schema {
     mutation: Mutation
 }
 
-type City {
+interface CustomInterface {
+    id: ID!
+    name: String!
+}
+
+type City implements CustomInterface{
     country: Country!
     createdAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
     id: ID! @fake(type:number)
@@ -25,7 +30,7 @@ type Commitment {
     updatedAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
 }
 
-type Company {
+type Company implements CustomInterface {
     createdAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
     emailed: Boolean @fake(type:number, options:{minNumber:0, maxMoney:1})
     id: ID! @fake(type:number)
@@ -38,7 +43,7 @@ type Company {
     websiteUrl: String! @fake(type:url)
 }
 
-type Country {
+type Country implements CustomInterface {
     cities(after: String, before: String, first: Int, last: Int, orderBy: CityOrderByInput, skip: Int, where: CityWhereInput): [City!] @listLength(min:1, max:8)
     createdAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
     id: ID! @fake(type:number)
@@ -78,6 +83,8 @@ type Location {
     type: String! @examples(values:["city"])
 }
 
+union CustomUnion = Job | Company | Country | City
+
 type Mutation {
     postJob(input: PostJobInput!): Job!
     subscribe(input: SubscribeInput!): User!
@@ -97,6 +104,8 @@ type Query {
     locations(input: LocationsInput!): [Location!]!
     remote(input: LocationInput!): Remote!
     remotes: [Remote!]!
+    interfaces(input: InterfaceInput): [CustomInterface!]!
+    unions(input: UnionInput): [CustomUnion!]!
 }
 
 type Remote {
@@ -908,5 +917,13 @@ input UpdateCompanyInput {
 
 input UpdateJobInput {
     description: String!
+    id: ID!
+}
+
+input InterfaceInput {
+    id: ID!
+}
+
+input UnionInput {
     id: ID!
 }
