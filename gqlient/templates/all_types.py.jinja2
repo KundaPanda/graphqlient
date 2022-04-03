@@ -37,8 +37,8 @@ class {{ type_ }}Selection(Generic[{{ type_ }}SelectionType]):
     {% set field_type = get_type(type_, strip_class=True, suffix='Field') -%}
     def select(self, *fields: {{ field_type }}) -> {{ type_ }}SelectionType:
         graphql_fields = [f.field_name for f in fields if isinstance(f, {{ field_type }})]
-        nested_selects = [lambda s: f.finish_select(getattr(s.{{ get_type(type_, strip_class=True) }}, f.calling_field), s)  # type: ignore
-                          for f in fields if not isinstance(f, {{ field_type }})]
+        nested_selects = list(map(lambda f: lambda s: f.finish_select(getattr(s.{{ get_type(type_, strip_class=True) }}, f.calling_field), s),  # type: ignore
+                                  filter(lambda f: not isinstance(f, {{ field_type }}), fields)))
         self.finish_select = partial_select(list(map(lambda f: lambda s: getattr(s.{{ get_type(type_, strip_class=True) }}, f), graphql_fields)) + nested_selects)
         return self
 

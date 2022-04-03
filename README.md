@@ -6,6 +6,7 @@ All fields are annotated with types, IDE auto-completion and hints should work.
 1. `poetry install`
 2. `poetry run python -m gqlient.generator`
 3. Use client generated in *generated/client_code.py*
+4. `docker run -p 127.0.0.1:9002:9002 apisguru/graphql-faker`
 
 # Roadmap
 - [x] Basic client generation

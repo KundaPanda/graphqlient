@@ -103,7 +103,7 @@ class Query:
 {% endfor %}
 
 class Client:
-    def __init__(self, url=None, schema=None, **kwargs):
+    def __init__(self, url={{ api_url }}, schema=None, **kwargs):
         if not url and not schema:
             raise ValueError('Either url or schema must be provided')
         if schema and Path(schema).exists():

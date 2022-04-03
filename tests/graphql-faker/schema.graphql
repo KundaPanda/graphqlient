@@ -1,0 +1,912 @@
+# This file was generated based on ".graphqlconfig". Do not edit manually.
+
+schema {
+    query: Query
+    mutation: Mutation
+}
+
+type City {
+    country: Country!
+    createdAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
+    id: ID! @fake(type:number)
+    jobs(after: String, before: String, first: Int, last: Int, orderBy: JobOrderByInput, skip: Int, where: JobWhereInput): [Job!] @listLength(min:1, max:20)
+    name: String! @fake(type:city)
+    slug: String! @fake(type:city)
+    type: String! @fake(type:city)
+    updatedAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
+}
+
+type Commitment {
+    createdAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
+    id: ID! @fake(type:number)
+    jobs(after: String, before: String, first: Int, last: Int, orderBy: JobOrderByInput, skip: Int, where: JobWhereInput): [Job!] @listLength(min:1, max:5)
+    slug: String! @fake(type:word)
+    title: String! @fake(type:jobTitle)
+    updatedAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
+}
+
+type Company {
+    createdAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
+    emailed: Boolean @fake(type:number, options:{minNumber:0, maxMoney:1})
+    id: ID! @fake(type:number)
+    jobs(after: String, before: String, first: Int, last: Int, orderBy: JobOrderByInput, skip: Int, where: JobWhereInput): [Job!]  @listLength(min:1, max:6)
+    logoUrl: String @fake(type:url)
+    name: String! @fake(type:companyName)
+    slug: String! @fake(type:companyName)
+    twitter: String @fake(type:url)
+    updatedAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
+    websiteUrl: String! @fake(type:url)
+}
+
+type Country {
+    cities(after: String, before: String, first: Int, last: Int, orderBy: CityOrderByInput, skip: Int, where: CityWhereInput): [City!] @listLength(min:1, max:8)
+    createdAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
+    id: ID! @fake(type:number)
+    isoCode: String @fake(type:countryCode)
+    jobs(after: String, before: String, first: Int, last: Int, orderBy: JobOrderByInput, skip: Int, where: JobWhereInput): [Job!] @listLength(min:1, max:5)
+    name: String! @fake(type:country)
+    slug: String! @fake(type:country)
+    type: String! @fake(type:country)
+    updatedAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
+}
+
+type Job {
+    applyUrl: String @fake(type:url)
+    cities(after: String, before: String, first: Int, last: Int, orderBy: CityOrderByInput, skip: Int, where: CityWhereInput): [City!] @listLength(min:1, max:20)
+    commitment: Commitment!
+    company: Company
+    countries(after: String, before: String, first: Int, last: Int, orderBy: CountryOrderByInput, skip: Int, where: CountryWhereInput): [Country!] @listLength(min:1, max:4)
+    createdAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
+    description: String @fake(type:lorem, options:{loremSize:sentence})
+    id: ID! @fake(type:uuid)
+    isFeatured: Boolean @fake(type:number, options:{minNumber:0, maxNumber:1})
+    isPublished: Boolean @fake(type:number, options:{minNumber:0, maxNumber:1})
+    locationNames: String @fake(type:lorem, options:{loremSize:words})
+    postedAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
+    remotes(after: String, before: String, first: Int, last: Int, orderBy: RemoteOrderByInput, skip: Int, where: RemoteWhereInput): [Remote!] @listLength(min:1, max:4)
+    slug: String! @fake(type:jobTitle)
+    tags(after: String, before: String, first: Int, last: Int, orderBy: TagOrderByInput, skip: Int, where: TagWhereInput): [Tag!] @listLength(min:1, max:5)
+    title: String! @fake(type:jobTitle)
+    updatedAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
+    userEmail: String @fake(type:email)
+}
+
+type Location {
+    id: ID! @fake(type:uuid)
+    name: String! @fake(type:city)
+    slug: String! @fake(type:city)
+    type: String! @examples(values:["city"])
+}
+
+type Mutation {
+    postJob(input: PostJobInput!): Job!
+    subscribe(input: SubscribeInput!): User!
+    updateCompany(adminSecret: String!, input: UpdateCompanyInput!): Company!
+    updateJob(adminSecret: String!, input: UpdateJobInput!): Job!
+}
+
+type Query {
+    cities: [City!]!
+    city(input: LocationInput!): City!
+    commitments: [Commitment!]!
+    companies: [Company!]!
+    countries: [Country!]!
+    country(input: LocationInput!): Country!
+    job(input: JobInput!): Job!
+    jobs(input: JobsInput): [Job!]!
+    locations(input: LocationsInput!): [Location!]!
+    remote(input: LocationInput!): Remote!
+    remotes: [Remote!]!
+}
+
+type Remote {
+    createdAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
+    id: ID! @fake(type:number)
+    jobs(after: String, before: String, first: Int, last: Int, orderBy: JobOrderByInput, skip: Int, where: JobWhereInput): [Job!] @listLength(min:1, max:10)
+    name: String! @examples(values:["Remote"])
+    slug: String! @examples(values:["remote"])
+    type: String! @examples(values:["remote"])
+    updatedAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
+}
+
+type Tag {
+    createdAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
+    id: ID! @fake(type:word)
+    jobs(after: String, before: String, first: Int, last: Int, orderBy: JobOrderByInput, skip: Int, where: JobWhereInput): [Job!] @listLength(min:1, max:10)
+    name: String! @fake(type:word)
+    slug: String! @fake(type:word)
+    updatedAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
+}
+
+type User {
+    createdAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
+    email: String! @fake(type:email)
+    id: ID! @fake(type:uuid)
+    name: String @fake(type:lastName)
+    subscribe: Boolean! @fake(type:number, options:{minNumber:0, maxNumber: 1})
+    updatedAt: DateTime! @fake(type:date, options:{dateFormat:"YYYY-MM-DDThh:mm:ssZ"})
+}
+
+enum CityOrderByInput {
+    createdAt_ASC
+    createdAt_DESC
+    id_ASC
+    id_DESC
+    name_ASC
+    name_DESC
+    slug_ASC
+    slug_DESC
+    type_ASC
+    type_DESC
+    updatedAt_ASC
+    updatedAt_DESC
+}
+
+enum CountryOrderByInput {
+    createdAt_ASC
+    createdAt_DESC
+    id_ASC
+    id_DESC
+    isoCode_ASC
+    isoCode_DESC
+    name_ASC
+    name_DESC
+    slug_ASC
+    slug_DESC
+    type_ASC
+    type_DESC
+    updatedAt_ASC
+    updatedAt_DESC
+}
+
+enum JobOrderByInput {
+    applyUrl_ASC
+    applyUrl_DESC
+    createdAt_ASC
+    createdAt_DESC
+    description_ASC
+    description_DESC
+    id_ASC
+    id_DESC
+    isFeatured_ASC
+    isFeatured_DESC
+    isPublished_ASC
+    isPublished_DESC
+    locationNames_ASC
+    locationNames_DESC
+    postedAt_ASC
+    postedAt_DESC
+    slug_ASC
+    slug_DESC
+    title_ASC
+    title_DESC
+    updatedAt_ASC
+    updatedAt_DESC
+    userEmail_ASC
+    userEmail_DESC
+}
+
+enum RemoteOrderByInput {
+    createdAt_ASC
+    createdAt_DESC
+    id_ASC
+    id_DESC
+    name_ASC
+    name_DESC
+    slug_ASC
+    slug_DESC
+    type_ASC
+    type_DESC
+    updatedAt_ASC
+    updatedAt_DESC
+}
+
+enum TagOrderByInput {
+    createdAt_ASC
+    createdAt_DESC
+    id_ASC
+    id_DESC
+    name_ASC
+    name_DESC
+    slug_ASC
+    slug_DESC
+    updatedAt_ASC
+    updatedAt_DESC
+}
+
+scalar DateTime
+
+input CityWhereInput {
+    AND: [CityWhereInput!]
+    NOT: [CityWhereInput!]
+    OR: [CityWhereInput!]
+    country: CountryWhereInput
+    createdAt: DateTime
+    createdAt_gt: DateTime
+    createdAt_gte: DateTime
+    createdAt_in: [DateTime!]
+    createdAt_lt: DateTime
+    createdAt_lte: DateTime
+    createdAt_not: DateTime
+    createdAt_not_in: [DateTime!]
+    id: ID
+    id_contains: ID
+    id_ends_with: ID
+    id_gt: ID
+    id_gte: ID
+    id_in: [ID!]
+    id_lt: ID
+    id_lte: ID
+    id_not: ID
+    id_not_contains: ID
+    id_not_ends_with: ID
+    id_not_in: [ID!]
+    id_not_starts_with: ID
+    id_starts_with: ID
+    jobs_every: JobWhereInput
+    jobs_none: JobWhereInput
+    jobs_some: JobWhereInput
+    name: String
+    name_contains: String
+    name_ends_with: String
+    name_gt: String
+    name_gte: String
+    name_in: [String!]
+    name_lt: String
+    name_lte: String
+    name_not: String
+    name_not_contains: String
+    name_not_ends_with: String
+    name_not_in: [String!]
+    name_not_starts_with: String
+    name_starts_with: String
+    slug: String
+    slug_contains: String
+    slug_ends_with: String
+    slug_gt: String
+    slug_gte: String
+    slug_in: [String!]
+    slug_lt: String
+    slug_lte: String
+    slug_not: String
+    slug_not_contains: String
+    slug_not_ends_with: String
+    slug_not_in: [String!]
+    slug_not_starts_with: String
+    slug_starts_with: String
+    type: String
+    type_contains: String
+    type_ends_with: String
+    type_gt: String
+    type_gte: String
+    type_in: [String!]
+    type_lt: String
+    type_lte: String
+    type_not: String
+    type_not_contains: String
+    type_not_ends_with: String
+    type_not_in: [String!]
+    type_not_starts_with: String
+    type_starts_with: String
+    updatedAt: DateTime
+    updatedAt_gt: DateTime
+    updatedAt_gte: DateTime
+    updatedAt_in: [DateTime!]
+    updatedAt_lt: DateTime
+    updatedAt_lte: DateTime
+    updatedAt_not: DateTime
+    updatedAt_not_in: [DateTime!]
+}
+
+input CommitmentWhereInput {
+    AND: [CommitmentWhereInput!]
+    NOT: [CommitmentWhereInput!]
+    OR: [CommitmentWhereInput!]
+    createdAt: DateTime
+    createdAt_gt: DateTime
+    createdAt_gte: DateTime
+    createdAt_in: [DateTime!]
+    createdAt_lt: DateTime
+    createdAt_lte: DateTime
+    createdAt_not: DateTime
+    createdAt_not_in: [DateTime!]
+    id: ID
+    id_contains: ID
+    id_ends_with: ID
+    id_gt: ID
+    id_gte: ID
+    id_in: [ID!]
+    id_lt: ID
+    id_lte: ID
+    id_not: ID
+    id_not_contains: ID
+    id_not_ends_with: ID
+    id_not_in: [ID!]
+    id_not_starts_with: ID
+    id_starts_with: ID
+    jobs_every: JobWhereInput
+    jobs_none: JobWhereInput
+    jobs_some: JobWhereInput
+    slug: String
+    slug_contains: String
+    slug_ends_with: String
+    slug_gt: String
+    slug_gte: String
+    slug_in: [String!]
+    slug_lt: String
+    slug_lte: String
+    slug_not: String
+    slug_not_contains: String
+    slug_not_ends_with: String
+    slug_not_in: [String!]
+    slug_not_starts_with: String
+    slug_starts_with: String
+    title: String
+    title_contains: String
+    title_ends_with: String
+    title_gt: String
+    title_gte: String
+    title_in: [String!]
+    title_lt: String
+    title_lte: String
+    title_not: String
+    title_not_contains: String
+    title_not_ends_with: String
+    title_not_in: [String!]
+    title_not_starts_with: String
+    title_starts_with: String
+    updatedAt: DateTime
+    updatedAt_gt: DateTime
+    updatedAt_gte: DateTime
+    updatedAt_in: [DateTime!]
+    updatedAt_lt: DateTime
+    updatedAt_lte: DateTime
+    updatedAt_not: DateTime
+    updatedAt_not_in: [DateTime!]
+}
+
+input CompanyWhereInput {
+    AND: [CompanyWhereInput!]
+    NOT: [CompanyWhereInput!]
+    OR: [CompanyWhereInput!]
+    createdAt: DateTime
+    createdAt_gt: DateTime
+    createdAt_gte: DateTime
+    createdAt_in: [DateTime!]
+    createdAt_lt: DateTime
+    createdAt_lte: DateTime
+    createdAt_not: DateTime
+    createdAt_not_in: [DateTime!]
+    emailed: Boolean
+    emailed_not: Boolean
+    id: ID
+    id_contains: ID
+    id_ends_with: ID
+    id_gt: ID
+    id_gte: ID
+    id_in: [ID!]
+    id_lt: ID
+    id_lte: ID
+    id_not: ID
+    id_not_contains: ID
+    id_not_ends_with: ID
+    id_not_in: [ID!]
+    id_not_starts_with: ID
+    id_starts_with: ID
+    jobs_every: JobWhereInput
+    jobs_none: JobWhereInput
+    jobs_some: JobWhereInput
+    logoUrl: String
+    logoUrl_contains: String
+    logoUrl_ends_with: String
+    logoUrl_gt: String
+    logoUrl_gte: String
+    logoUrl_in: [String!]
+    logoUrl_lt: String
+    logoUrl_lte: String
+    logoUrl_not: String
+    logoUrl_not_contains: String
+    logoUrl_not_ends_with: String
+    logoUrl_not_in: [String!]
+    logoUrl_not_starts_with: String
+    logoUrl_starts_with: String
+    name: String
+    name_contains: String
+    name_ends_with: String
+    name_gt: String
+    name_gte: String
+    name_in: [String!]
+    name_lt: String
+    name_lte: String
+    name_not: String
+    name_not_contains: String
+    name_not_ends_with: String
+    name_not_in: [String!]
+    name_not_starts_with: String
+    name_starts_with: String
+    slug: String
+    slug_contains: String
+    slug_ends_with: String
+    slug_gt: String
+    slug_gte: String
+    slug_in: [String!]
+    slug_lt: String
+    slug_lte: String
+    slug_not: String
+    slug_not_contains: String
+    slug_not_ends_with: String
+    slug_not_in: [String!]
+    slug_not_starts_with: String
+    slug_starts_with: String
+    twitter: String
+    twitter_contains: String
+    twitter_ends_with: String
+    twitter_gt: String
+    twitter_gte: String
+    twitter_in: [String!]
+    twitter_lt: String
+    twitter_lte: String
+    twitter_not: String
+    twitter_not_contains: String
+    twitter_not_ends_with: String
+    twitter_not_in: [String!]
+    twitter_not_starts_with: String
+    twitter_starts_with: String
+    updatedAt: DateTime
+    updatedAt_gt: DateTime
+    updatedAt_gte: DateTime
+    updatedAt_in: [DateTime!]
+    updatedAt_lt: DateTime
+    updatedAt_lte: DateTime
+    updatedAt_not: DateTime
+    updatedAt_not_in: [DateTime!]
+    websiteUrl: String
+    websiteUrl_contains: String
+    websiteUrl_ends_with: String
+    websiteUrl_gt: String
+    websiteUrl_gte: String
+    websiteUrl_in: [String!]
+    websiteUrl_lt: String
+    websiteUrl_lte: String
+    websiteUrl_not: String
+    websiteUrl_not_contains: String
+    websiteUrl_not_ends_with: String
+    websiteUrl_not_in: [String!]
+    websiteUrl_not_starts_with: String
+    websiteUrl_starts_with: String
+}
+
+input CountryWhereInput {
+    AND: [CountryWhereInput!]
+    NOT: [CountryWhereInput!]
+    OR: [CountryWhereInput!]
+    cities_every: CityWhereInput
+    cities_none: CityWhereInput
+    cities_some: CityWhereInput
+    createdAt: DateTime
+    createdAt_gt: DateTime
+    createdAt_gte: DateTime
+    createdAt_in: [DateTime!]
+    createdAt_lt: DateTime
+    createdAt_lte: DateTime
+    createdAt_not: DateTime
+    createdAt_not_in: [DateTime!]
+    id: ID
+    id_contains: ID
+    id_ends_with: ID
+    id_gt: ID
+    id_gte: ID
+    id_in: [ID!]
+    id_lt: ID
+    id_lte: ID
+    id_not: ID
+    id_not_contains: ID
+    id_not_ends_with: ID
+    id_not_in: [ID!]
+    id_not_starts_with: ID
+    id_starts_with: ID
+    isoCode: String
+    isoCode_contains: String
+    isoCode_ends_with: String
+    isoCode_gt: String
+    isoCode_gte: String
+    isoCode_in: [String!]
+    isoCode_lt: String
+    isoCode_lte: String
+    isoCode_not: String
+    isoCode_not_contains: String
+    isoCode_not_ends_with: String
+    isoCode_not_in: [String!]
+    isoCode_not_starts_with: String
+    isoCode_starts_with: String
+    jobs_every: JobWhereInput
+    jobs_none: JobWhereInput
+    jobs_some: JobWhereInput
+    name: String
+    name_contains: String
+    name_ends_with: String
+    name_gt: String
+    name_gte: String
+    name_in: [String!]
+    name_lt: String
+    name_lte: String
+    name_not: String
+    name_not_contains: String
+    name_not_ends_with: String
+    name_not_in: [String!]
+    name_not_starts_with: String
+    name_starts_with: String
+    slug: String
+    slug_contains: String
+    slug_ends_with: String
+    slug_gt: String
+    slug_gte: String
+    slug_in: [String!]
+    slug_lt: String
+    slug_lte: String
+    slug_not: String
+    slug_not_contains: String
+    slug_not_ends_with: String
+    slug_not_in: [String!]
+    slug_not_starts_with: String
+    slug_starts_with: String
+    type: String
+    type_contains: String
+    type_ends_with: String
+    type_gt: String
+    type_gte: String
+    type_in: [String!]
+    type_lt: String
+    type_lte: String
+    type_not: String
+    type_not_contains: String
+    type_not_ends_with: String
+    type_not_in: [String!]
+    type_not_starts_with: String
+    type_starts_with: String
+    updatedAt: DateTime
+    updatedAt_gt: DateTime
+    updatedAt_gte: DateTime
+    updatedAt_in: [DateTime!]
+    updatedAt_lt: DateTime
+    updatedAt_lte: DateTime
+    updatedAt_not: DateTime
+    updatedAt_not_in: [DateTime!]
+}
+
+input JobInput {
+    companySlug: String!
+    jobSlug: String!
+}
+
+input JobWhereInput {
+    AND: [JobWhereInput!]
+    NOT: [JobWhereInput!]
+    OR: [JobWhereInput!]
+    applyUrl: String
+    applyUrl_contains: String
+    applyUrl_ends_with: String
+    applyUrl_gt: String
+    applyUrl_gte: String
+    applyUrl_in: [String!]
+    applyUrl_lt: String
+    applyUrl_lte: String
+    applyUrl_not: String
+    applyUrl_not_contains: String
+    applyUrl_not_ends_with: String
+    applyUrl_not_in: [String!]
+    applyUrl_not_starts_with: String
+    applyUrl_starts_with: String
+    cities_every: CityWhereInput
+    cities_none: CityWhereInput
+    cities_some: CityWhereInput
+    commitment: CommitmentWhereInput
+    company: CompanyWhereInput
+    countries_every: CountryWhereInput
+    countries_none: CountryWhereInput
+    countries_some: CountryWhereInput
+    createdAt: DateTime
+    createdAt_gt: DateTime
+    createdAt_gte: DateTime
+    createdAt_in: [DateTime!]
+    createdAt_lt: DateTime
+    createdAt_lte: DateTime
+    createdAt_not: DateTime
+    createdAt_not_in: [DateTime!]
+    description: String
+    description_contains: String
+    description_ends_with: String
+    description_gt: String
+    description_gte: String
+    description_in: [String!]
+    description_lt: String
+    description_lte: String
+    description_not: String
+    description_not_contains: String
+    description_not_ends_with: String
+    description_not_in: [String!]
+    description_not_starts_with: String
+    description_starts_with: String
+    id: ID
+    id_contains: ID
+    id_ends_with: ID
+    id_gt: ID
+    id_gte: ID
+    id_in: [ID!]
+    id_lt: ID
+    id_lte: ID
+    id_not: ID
+    id_not_contains: ID
+    id_not_ends_with: ID
+    id_not_in: [ID!]
+    id_not_starts_with: ID
+    id_starts_with: ID
+    isFeatured: Boolean
+    isFeatured_not: Boolean
+    isPublished: Boolean
+    isPublished_not: Boolean
+    locationNames: String
+    locationNames_contains: String
+    locationNames_ends_with: String
+    locationNames_gt: String
+    locationNames_gte: String
+    locationNames_in: [String!]
+    locationNames_lt: String
+    locationNames_lte: String
+    locationNames_not: String
+    locationNames_not_contains: String
+    locationNames_not_ends_with: String
+    locationNames_not_in: [String!]
+    locationNames_not_starts_with: String
+    locationNames_starts_with: String
+    postedAt: DateTime
+    postedAt_gt: DateTime
+    postedAt_gte: DateTime
+    postedAt_in: [DateTime!]
+    postedAt_lt: DateTime
+    postedAt_lte: DateTime
+    postedAt_not: DateTime
+    postedAt_not_in: [DateTime!]
+    remotes_every: RemoteWhereInput
+    remotes_none: RemoteWhereInput
+    remotes_some: RemoteWhereInput
+    slug: String
+    slug_contains: String
+    slug_ends_with: String
+    slug_gt: String
+    slug_gte: String
+    slug_in: [String!]
+    slug_lt: String
+    slug_lte: String
+    slug_not: String
+    slug_not_contains: String
+    slug_not_ends_with: String
+    slug_not_in: [String!]
+    slug_not_starts_with: String
+    slug_starts_with: String
+    tags_every: TagWhereInput
+    tags_none: TagWhereInput
+    tags_some: TagWhereInput
+    title: String
+    title_contains: String
+    title_ends_with: String
+    title_gt: String
+    title_gte: String
+    title_in: [String!]
+    title_lt: String
+    title_lte: String
+    title_not: String
+    title_not_contains: String
+    title_not_ends_with: String
+    title_not_in: [String!]
+    title_not_starts_with: String
+    title_starts_with: String
+    updatedAt: DateTime
+    updatedAt_gt: DateTime
+    updatedAt_gte: DateTime
+    updatedAt_in: [DateTime!]
+    updatedAt_lt: DateTime
+    updatedAt_lte: DateTime
+    updatedAt_not: DateTime
+    updatedAt_not_in: [DateTime!]
+    userEmail: String
+    userEmail_contains: String
+    userEmail_ends_with: String
+    userEmail_gt: String
+    userEmail_gte: String
+    userEmail_in: [String!]
+    userEmail_lt: String
+    userEmail_lte: String
+    userEmail_not: String
+    userEmail_not_contains: String
+    userEmail_not_ends_with: String
+    userEmail_not_in: [String!]
+    userEmail_not_starts_with: String
+    userEmail_starts_with: String
+}
+
+input JobsInput {
+    slug: String
+    type: String
+}
+
+input LocationInput {
+    slug: String!
+}
+
+input LocationsInput {
+    value: String!
+}
+
+input PostJobInput {
+    applyUrl: String!
+    commitmentId: ID!
+    companyName: String!
+    description: String!
+    locationNames: String!
+    title: String!
+    userEmail: String!
+}
+
+input RemoteWhereInput {
+    AND: [RemoteWhereInput!]
+    NOT: [RemoteWhereInput!]
+    OR: [RemoteWhereInput!]
+    createdAt: DateTime
+    createdAt_gt: DateTime
+    createdAt_gte: DateTime
+    createdAt_in: [DateTime!]
+    createdAt_lt: DateTime
+    createdAt_lte: DateTime
+    createdAt_not: DateTime
+    createdAt_not_in: [DateTime!]
+    id: ID
+    id_contains: ID
+    id_ends_with: ID
+    id_gt: ID
+    id_gte: ID
+    id_in: [ID!]
+    id_lt: ID
+    id_lte: ID
+    id_not: ID
+    id_not_contains: ID
+    id_not_ends_with: ID
+    id_not_in: [ID!]
+    id_not_starts_with: ID
+    id_starts_with: ID
+    jobs_every: JobWhereInput
+    jobs_none: JobWhereInput
+    jobs_some: JobWhereInput
+    name: String
+    name_contains: String
+    name_ends_with: String
+    name_gt: String
+    name_gte: String
+    name_in: [String!]
+    name_lt: String
+    name_lte: String
+    name_not: String
+    name_not_contains: String
+    name_not_ends_with: String
+    name_not_in: [String!]
+    name_not_starts_with: String
+    name_starts_with: String
+    slug: String
+    slug_contains: String
+    slug_ends_with: String
+    slug_gt: String
+    slug_gte: String
+    slug_in: [String!]
+    slug_lt: String
+    slug_lte: String
+    slug_not: String
+    slug_not_contains: String
+    slug_not_ends_with: String
+    slug_not_in: [String!]
+    slug_not_starts_with: String
+    slug_starts_with: String
+    type: String
+    type_contains: String
+    type_ends_with: String
+    type_gt: String
+    type_gte: String
+    type_in: [String!]
+    type_lt: String
+    type_lte: String
+    type_not: String
+    type_not_contains: String
+    type_not_ends_with: String
+    type_not_in: [String!]
+    type_not_starts_with: String
+    type_starts_with: String
+    updatedAt: DateTime
+    updatedAt_gt: DateTime
+    updatedAt_gte: DateTime
+    updatedAt_in: [DateTime!]
+    updatedAt_lt: DateTime
+    updatedAt_lte: DateTime
+    updatedAt_not: DateTime
+    updatedAt_not_in: [DateTime!]
+}
+
+input SubscribeInput {
+    email: String!
+    name: String!
+}
+
+input TagWhereInput {
+    AND: [TagWhereInput!]
+    NOT: [TagWhereInput!]
+    OR: [TagWhereInput!]
+    createdAt: DateTime
+    createdAt_gt: DateTime
+    createdAt_gte: DateTime
+    createdAt_in: [DateTime!]
+    createdAt_lt: DateTime
+    createdAt_lte: DateTime
+    createdAt_not: DateTime
+    createdAt_not_in: [DateTime!]
+    id: ID
+    id_contains: ID
+    id_ends_with: ID
+    id_gt: ID
+    id_gte: ID
+    id_in: [ID!]
+    id_lt: ID
+    id_lte: ID
+    id_not: ID
+    id_not_contains: ID
+    id_not_ends_with: ID
+    id_not_in: [ID!]
+    id_not_starts_with: ID
+    id_starts_with: ID
+    jobs_every: JobWhereInput
+    jobs_none: JobWhereInput
+    jobs_some: JobWhereInput
+    name: String
+    name_contains: String
+    name_ends_with: String
+    name_gt: String
+    name_gte: String
+    name_in: [String!]
+    name_lt: String
+    name_lte: String
+    name_not: String
+    name_not_contains: String
+    name_not_ends_with: String
+    name_not_in: [String!]
+    name_not_starts_with: String
+    name_starts_with: String
+    slug: String
+    slug_contains: String
+    slug_ends_with: String
+    slug_gt: String
+    slug_gte: String
+    slug_in: [String!]
+    slug_lt: String
+    slug_lte: String
+    slug_not: String
+    slug_not_contains: String
+    slug_not_ends_with: String
+    slug_not_in: [String!]
+    slug_not_starts_with: String
+    slug_starts_with: String
+    updatedAt: DateTime
+    updatedAt_gt: DateTime
+    updatedAt_gte: DateTime
+    updatedAt_in: [DateTime!]
+    updatedAt_lt: DateTime
+    updatedAt_lte: DateTime
+    updatedAt_not: DateTime
+    updatedAt_not_in: [DateTime!]
+}
+
+input UpdateCompanyInput {
+    id: ID!
+    logoUrl: String!
+}
+
+input UpdateJobInput {
+    description: String!
+    id: ID!
+}
