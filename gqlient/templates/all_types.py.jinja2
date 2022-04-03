@@ -3,21 +3,8 @@
 {{ get_type(type_, suffix=constants.selection_type) }} = TypeVar('{{ get_type(type_, suffix=constants.selection_type) }}')
 
 
-class {{ get_type(type_, constants.field) }}:
-    def __init__(self, field_name: str, field_type: Union[Type, str]):
-        if isinstance(field_type, str):
-            field_type = ForwardRef(field_type)
-        self.field_name = field_name
-        self.field_type = field_type
-
-    def __getattr__(self, name):
-        if name == 'select':
-            return self.get_type()(self.field_name).select
-
-    def get_type(self):
-        if isinstance(self.field_type, ForwardRef):
-            return _eval_type(self.field_type, globals(), locals())
-        return self.field_type
+class {{ get_type(type_, constants.field) }}(BaseField):
+    pass
 
 
 @dataclass
@@ -52,21 +39,8 @@ class {{ get_type(type_, constants.selection) }}(Generic[{{ get_type(type_, cons
 {{ get_type(type_, constants.selection_type) }} = TypeVar('{{ get_type(type_, constants.selection_type) }}')
 
 
-class {{ get_type(type_, constants.field) }}:
-    def __init__(self, field_name: str, field_type: Union[Type, str]):
-        if isinstance(field_type, str):
-            field_type = ForwardRef(field_type)
-        self.field_name = field_name
-        self.field_type = field_type
-
-    def __getattr__(self, name):
-        if name == 'select':
-            return self.get_type()(self.field_name).select
-
-    def get_type(self):
-        if isinstance(self.field_type, ForwardRef):
-            return _eval_type(self.field_type, globals(), locals())
-        return self.field_type
+class {{ get_type(type_, constants.field) }}(BaseField):
+    pass
 
 
 @dataclass
@@ -113,21 +87,8 @@ class {{ get_type(type_, constants.selection) }}(Generic[{{ get_type(type_, cons
         return self
 
 
-class {{ get_type(type_, constants.field) }}:
-    def __init__(self, field_name: str, field_type: Union[Type, str]):
-        if isinstance(field_type, str):
-            field_type = ForwardRef(field_type)
-        self.field_name = field_name
-        self.field_type = field_type
-
-    def __getattr__(self, name):
-        if name == 'select':
-            return self.get_type()(self.field_name).select
-
-    def get_type(self):
-        if isinstance(self.field_type, ForwardRef):
-            return _eval_type(self.field_type, globals(), locals())
-        return self.field_type
+class {{ get_type(type_, constants.field) }}(BaseField):
+    pass
 
 
 @dataclass

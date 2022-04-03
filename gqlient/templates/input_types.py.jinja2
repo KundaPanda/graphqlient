@@ -10,7 +10,7 @@ class {{type_}}(InputType):
 
     {% for field_name, field in type_.fields.items() -%}
         {{ underscore(field_name) }}: {{ get_type(field.type, enquote=True) }}
-        {%- if get_type(field.type).startswith('Optional') %}{{ ' = EMPTY' }}{% endif %}
+        {%- if get_type(field.type, strip_class=False).startswith('Optional') %}{{ ' = EMPTY' }}{% endif %}
     {% endfor %}
     def to_graphql(self, schema: DSLSchema):
         values = {self.__graphql_map__[k]: getattr(self, k) for k in self.__graphql_map__ if getattr(self, k) != EMPTY}

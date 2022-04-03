@@ -29,11 +29,11 @@ class {{ get_type(field.name, suffix=constants.root_selection) }}:
             if isinstance(f, {{ field_type }}):
                 continue
             if f.calling_field is not None:
-                nested_fields.append(f.finish_select(getattr(self.schema.{{ field_type | replace('Field', '') }}, f.calling_field), self.schema))
+                nested_fields.append(f.finish_select(getattr(self.schema.{{ get_type(field.type, replace_underscores=False) }}, f.calling_field), self.schema))
             else:
                 fragment = DSLInlineFragment()
                 nested_fields.append(f.finish_select(fragment.on(getattr(self.schema, f.__class__.__name__.replace('{{ constants.selection }}', ''))), self.schema))
-        self.query = self.query.select(*[getattr(self.schema.{{ type_name }}, f) for f in graphql_fields],
+        self.query = self.query.select(*[getattr(self.schema.{{ get_type(field.type, replace_underscores=False) }}, f) for f in graphql_fields],
                                        *nested_fields)
         return Executable(self)
 

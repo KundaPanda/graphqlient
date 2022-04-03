@@ -50,11 +50,11 @@ def get_graphql_types(type_):
 
 
 @functools.lru_cache(maxsize=None)
-def get_type(type_, suffix=Constants.empty, enquote=False, strip_class=True, level=0):
+def get_type(type_, suffix=Constants.empty, enquote=False, strip_class=True, replace_underscores=True, level=0):
     if is_non_null_type(type_):
-        return get_type(type_.of_type, suffix, enquote, strip_class, level + 1)
+        return get_type(type_.of_type, suffix, enquote, strip_class, replace_underscores, level + 1)
     if is_list_type(type_):
-        val = get_type(type_.of_type, suffix, enquote, strip_class, level + 1)
+        val = get_type(type_.of_type, suffix, enquote, strip_class, replace_underscores, level + 1)
         if not strip_class:
             val = f"List[{val}]"
     elif is_scalar_type(type_):
@@ -65,10 +65,11 @@ def get_type(type_, suffix=Constants.empty, enquote=False, strip_class=True, lev
             val = val._name
     else:
         type_name = type_ if isinstance(type_, str) else type_.name
+        camelize_fn = my_camelize if replace_underscores else camelize
         if isinstance(suffix, str) and len((split_ := suffix.split('[', 2))) > 1:
-            val = my_camelize(f"{type_name}{split_[0]}") + '[' + split_[1]
+            val = camelize_fn(f"{type_name}{split_[0]}") + '[' + split_[1]
         else:
-            val = my_camelize(f"{type_name}{suffix}")
+            val = camelize_fn(f"{type_name}{suffix}")
         if enquote:
             val = f"'{val}'"
     return f'Optional[{val}]' if (level == 0 and not strip_class) else val
@@ -117,13 +118,13 @@ def my_underscore(s):
     value = underscore(s)
     if value in BUILTIN_NAMES or iskeyword(value):
         value += "_"
-    elif value.startswith('_'):
+    while value.startswith('_'):
         value = value[1:] + "_"
     return value
 
 
 def my_camelize(value):
-    if value.startswith('_'):
+    while value.startswith('_'):
         return camelize(value[1:]) + '_'
     return camelize(value)
 
@@ -183,7 +184,6 @@ def generate(schema: Union[Path, str],
         get_graphql_types=get_graphql_types,
         get_union_types=get_union_types,
         get_interface_types=get_interface_types,
-        camelize=my_camelize,
         underscore=my_underscore,
         builtins=BUILTIN_NAMES,
     )
