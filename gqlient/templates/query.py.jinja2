@@ -3,7 +3,7 @@ import enum
 from dataclasses import dataclass
 from functools import partial
 from graphql import print_ast
-from typing import Any, Dict, ForwardRef, Generic, List, Optional, Type, TypeVar, Union, get_type_hints, overload
+from typing import Any, Dict, ForwardRef, Generic, List, Optional, Type, TypeVar, Union, overload, _eval_type
 
 import gql
 from gql.dsl import DSLSchema, dsl_gql, DSLInlineFragment, DSLQuery

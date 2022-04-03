@@ -1,5 +1,6 @@
 import builtins
 import enum
+import functools
 import inspect
 import itertools
 from keyword import iskeyword
@@ -29,6 +30,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 class Constants(enum.Enum):
     empty = ''
     selection = 'Selection'
+    selection_type = 'SelectionType'
     root_selection = 'RootSelection'
     field = 'Field'
     queryable_field = 'QueryableField'
@@ -47,17 +49,14 @@ def get_graphql_types(type_):
     return [type_]
 
 
-def get_type(type_, suffix=Constants.empty, enquote=False, strip_class=False, level=0):
+@functools.lru_cache(maxsize=None)
+def get_type(type_, suffix=Constants.empty, enquote=False, strip_class=True, level=0):
     if is_non_null_type(type_):
         return get_type(type_.of_type, suffix, enquote, strip_class, level + 1)
     if is_list_type(type_):
         val = get_type(type_.of_type, suffix, enquote, strip_class, level + 1)
         if not strip_class:
             val = f"List[{val}]"
-    elif is_union_type(type_):
-        val = type_.name + str(suffix)
-        if enquote:
-            val = f"'{val}'"
     elif is_scalar_type(type_):
         val = inspect.signature(type_.serialize).return_annotation
         if val != Any:
@@ -65,7 +64,11 @@ def get_type(type_, suffix=Constants.empty, enquote=False, strip_class=False, le
         else:
             val = val._name
     else:
-        val = f"{type_.name}{suffix}"
+        type_name = type_ if isinstance(type_, str) else type_.name
+        if isinstance(suffix, str) and len((split_ := suffix.split('[', 2))) > 1:
+            val = my_camelize(f"{type_name}{split_[0]}") + '[' + split_[1]
+        else:
+            val = my_camelize(f"{type_name}{suffix}")
         if enquote:
             val = f"'{val}'"
     return f'Optional[{val}]' if (level == 0 and not strip_class) else val
@@ -121,7 +124,7 @@ def my_underscore(s):
 
 def my_camelize(value):
     if value.startswith('_'):
-        return '_' + camelize(value[1:])
+        return camelize(value[1:]) + '_'
     return camelize(value)
 
 

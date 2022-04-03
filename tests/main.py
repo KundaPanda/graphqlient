@@ -7,7 +7,6 @@ BASE_DIR = Path(__file__).parent
 generate(BASE_DIR / "countries/schema.graphql", client_output=BASE_DIR / "countries/generated/client_code.py")
 
 from countries.generated.client_code import *
-from countries.generated.client_code import _Entity
 
 client = Client(url="https://countries.trevorblades.com/")
 result = client.query.countries(
@@ -31,9 +30,9 @@ r2 = client.query.entities_(
                      {"__typename": "Country", "code": "US"},
                      {"__typename": "Language", "code": "en"}]
 ).select(
-    _Entity.on(Country).select(Country.name, Country.states.select(State.name)),
-    _Entity.on(Continent).select(Continent.code),
-    _Entity.on(Language).select(Language.native),
+    Entity_.on(Country).select(Country.name, Country.states.select(State.name)),
+    Entity_.on(Continent).select(Continent.code),
+    Entity_.on(Language).select(Language.native),
 )
 
 print(r2.query)
