@@ -37,3 +37,15 @@ r2 = client.query.entities_(
 
 print(r2.query)
 print(r2.execute())
+
+
+r3 = client.query.continents(
+    filter_=ContinentFilterInput(code=StringQueryOperatorInput(eq="EU"))
+).select(
+    Continent.name,
+    Continent.countries.select(
+        Country.name,
+    )
+).execute()
+
+print(r3)

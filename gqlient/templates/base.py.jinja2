@@ -1,0 +1,126 @@
+{%- set union_type_names = union_types | map(attribute='name') | list -%}
+import asyncio
+import enum
+import sys
+from dataclasses import dataclass
+from functools import partial
+from graphql import print_ast
+from typing import Any, Dict, ForwardRef, Generic, List, Optional, Type, TypeVar, Union, overload
+
+import gql
+from gql.dsl import DSLMutation, DSLSchema, DSLSubscription, dsl_gql, DSLInlineFragment, DSLQuery
+from gql.transport.aiohttp import AIOHTTPTransport
+
+
+class Empty:
+    pass
+
+
+EMPTY = Empty
+
+PYTHON_VERSION = sys.version_info
+
+
+class Executable:
+    def __init__(self, selection):
+        self._query = selection.query
+        self.client = selection.client
+
+    @property
+    def query_ast(self):
+        class_ = {
+            'Mutation': DSLMutation,
+            'Query': DSLQuery,
+            'Subscription': DSLSubscription,
+        }
+        return dsl_gql(class_[self._query.parent_type.name](self._query))
+
+    @property
+    def query(self) -> str:
+        return print_ast(self.query_ast)
+
+    def execute(self) -> Dict[str, Any]:
+        return self.client.client.execute(self.query_ast)
+
+
+class QueryableField:
+    def __call__(self, *args, return_type: Type, **kwargs):
+        client, schema, query, *_ = args
+        return return_type(client, schema, query, **kwargs)
+
+
+class GeneratedType(type):
+    Field: type
+
+
+class GeneratedUnionType(GeneratedType):
+    def __getattr__(self, item):
+        if item == 'on':
+            return self.OnFragment
+        return getattr(super(), item)
+
+
+class GeneratedInterfaceType(GeneratedType):
+    def __getattr__(self, item):
+        if item == 'on':
+            return self.OnFragment
+        return getattr(super(), item)
+
+
+# noinspection PyProtectedMember
+def evaluate_forward_ref(ref, globalns, localns):
+    if PYTHON_VERSION < (3, 9):
+        return ref._evaluate(globalns, localns)
+    return ref._evaluate(globalns, localns, frozenset())
+
+
+class BaseField:
+    def __init__(self, field_name: str, field_type: Union[Type, str]):
+        if isinstance(field_type, str):
+            field_type = ForwardRef(field_type)
+        self.field_name = field_name
+        self.field_type = field_type
+
+    def __getattr__(self, name):
+        if name == 'select':
+            return self.get_type()(self.field_name).select
+
+    def get_type(self):
+        if isinstance(self.field_type, ForwardRef):
+            return evaluate_forward_ref(self.field_type, globals(), locals())
+        return self.field_type
+
+
+class InputType:
+    pass
+
+
+def partial_select(field_factories: List[Any]):
+    def select(calling_field: Any, schema: DSLSchema):
+        return calling_field.select(*[factory(schema) for factory in field_factories])
+    return select
+
+{%- include 'query.py.jinja2' %}
+
+{%- include 'mutation.py.jinja2' %}
+
+class Client:
+    def __init__(self, url: str, **kwargs):
+        self.client = gql.Client(transport=AIOHTTPTransport(url=url, **kwargs))
+        self.graphql_schema = None
+        self.schema = None
+        asyncio.run(self.load_schema())
+
+    async def load_schema(self):
+        async with self.client as s:
+            await s.fetch_schema()
+        self.graphql_schema = self.client.schema
+        self.schema = DSLSchema(self.graphql_schema)
+
+    @property
+    def query(self) -> Query:
+        return Query(client=self)
+
+    @property
+    def mutation(self) -> Mutation:
+        return Mutation(client=self)

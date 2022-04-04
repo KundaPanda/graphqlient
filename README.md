@@ -4,9 +4,9 @@ All fields are annotated with types, IDE auto-completion and hints should work.
 
 # Setup
 1. `poetry install`
-2. `poetry run python -m gqlient.generator`
-3. Use client generated in *generated/client_code.py*
-4. `docker run -p 127.0.0.1:9002:9002 apisguru/graphql-faker`
+2. `poetry run python -m tests.generate`
+3. Use client generated in *tests/\*/generated/client_code.py*
+4. For mocked JOBS api - `docker run -d --rm -p 127.0.0.1:9002:9002 -v "$(pwd)/tests/graphql-faker:/mock" apisguru/graphql-faker /mock/schema.graphql`
 
 # Roadmap
 - [x] Basic client generation
@@ -14,9 +14,9 @@ All fields are annotated with types, IDE auto-completion and hints should work.
 - [x] Actually creating and executing queries
 - [x] Nested fields
 - [x] Fragments, Unions, Interfaces
-- [ ] Class renaming
+- [x] Class renaming
+- [x] Mutations
 - [ ] Conditional imports
-- [ ] Mutations
 - [ ] Tests
 - [ ] Structured jinja templates
 - [ ] Well formatted Python code (spaces, blank lines, etc)

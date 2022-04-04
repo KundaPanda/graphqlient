@@ -1,5 +1,7 @@
 {%- set union_type_names = union_types | map(attribute='name') | list %}
-{% for field in fields %}
+{%- set fields = query_fields.copy() %}
+{%- set _ = fields.update(mutation_fields) %}
+{% for field_name, field in fields.items() %}
 {%- set is_union = get_type(field.type) in union_type_names %}
 {%- set union_type = [None] %}
 {%- if is_union -%}
@@ -12,7 +14,7 @@
 
 class {{ get_type(field.name, suffix=constants.root_selection) }}:
     def __init__(self, client: 'Client', schema: DSLSchema, query: Any, **kwargs) -> None:
-        {{ 'graphql_kwargs = {'}}{{ get_type(field.name, suffix=constants.queryable_field) }}{{'.__graphql_map__'}}[k]: (v if not isinstance(v, InputType) else v.to_graphql(schema))
+        {{ 'graphql_kwargs = {'}}{{ field.name }}{{'.__graphql_map__'}}[k]: (v if not isinstance(v, InputType) else v.to_graphql(schema))
                           for k, v in kwargs.items() if v != EMPTY}
         self.query = query
         if graphql_kwargs:
@@ -21,7 +23,7 @@ class {{ get_type(field.name, suffix=constants.root_selection) }}:
         self.client = client
 
     {% set type_name = get_type(field.type) -%}
-    {% set field_type = get_type(field.type, suffix='Field') -%}
+    {% set field_type = get_type(field.type, suffix=constants.field) -%}
     def select(self, *fields: {{ field_type }}) -> Executable:
         graphql_fields = [f.field_name for f in fields if isinstance(f, {{ field_type }})]
         nested_fields = []
@@ -40,7 +42,7 @@ class {{ get_type(field.name, suffix=constants.root_selection) }}:
 {%- set return_type = get_type(field.name, suffix=constants.root_selection) %}
 
 
-class {{ get_type(field.name, suffix=constants.queryable_field) }}(QueryableField):
+class {{ field.name }}(QueryableField):
     {{ '__graphql_map__ = {' }}{%  for arg in field.args %}
         '{{ underscore(arg) }}': '{{ arg }}'{% if not loop.last %}{{ ', ' }}{% endif %}
     {%- endfor %}

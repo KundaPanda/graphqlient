@@ -1,5 +1,7 @@
 class TestSimpleQueries:
-    def test_query(self, client):
+    from generated.client_code import Client
+
+    def test_query(self, client: Client):
         from generated.client_code import City, Country, Job, Tag
         query = client.query.jobs(
         ).select(
@@ -27,7 +29,7 @@ class TestSimpleQueries:
         assert query.query
         assert not query.execute().get('errors')
 
-    def test_interface(self, client):
+    def test_interface(self, client: Client):
         from generated.client_code import City, Country, CustomInterface
         query = client.query.interfaces(
         ).select(
@@ -43,7 +45,7 @@ class TestSimpleQueries:
         assert query.query
         assert not query.execute().get('errors')
 
-    def test_union(self, client):
+    def test_union(self, client: Client):
         from generated.client_code import City, Country, CustomUnion
         query = client.query.unions(
         ).select(
