@@ -3,14 +3,15 @@ import enum
 import functools
 import inspect
 import itertools
+import typing
 from keyword import iskeyword
-from typing import Any, Set, cast
+from typing import Any, Dict, Set, cast
 
 from graphql import (
     GraphQLEnumType, GraphQLField,
-    GraphQLInputObjectType, GraphQLInterfaceType, GraphQLObjectType,
+    GraphQLInputField, GraphQLInputObjectType, GraphQLInterfaceType, GraphQLObjectType,
     GraphQLUnionType,
-    is_enum_type, is_input_object_type, is_interface_type, is_list_type,
+    Undefined, is_enum_type, is_input_object_type, is_interface_type, is_list_type,
     is_non_null_type,
     is_object_type,
     is_scalar_type,
@@ -123,3 +124,15 @@ def get_union_types(type_: GraphQLUnionType):
 
 def get_interface_types(type_: GraphQLInterfaceType):
     return get_union_types(cast(GraphQLUnionType, type_))
+
+
+def has_default(field: GraphQLInputField):
+    return field.default_value != Undefined
+
+
+def sort_default_fields(fields: Dict[str, GraphQLInputField]):
+    return dict(sorted(fields.items(), key=lambda x: has_default(x[1])))
+
+
+def returns_many(field: GraphQLField):
+    return is_list_type(field.type) or (is_non_null_type(field.type) and is_list_type(field.type.of_type))

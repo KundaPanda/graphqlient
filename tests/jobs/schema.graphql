@@ -16,7 +16,9 @@ interface CustomInterface {
     name: String!
 }
 
-type City implements CustomInterface{
+union CustomUnion = City | Company | Country | Job
+
+type City implements CustomInterface {
     country: Country!
     createdAt: DateTime!
     id: ID!
@@ -49,7 +51,7 @@ type Company implements CustomInterface {
     websiteUrl: String!
 }
 
-type Country implements CustomInterface{
+type Country implements CustomInterface {
     cities(after: String, before: String, first: Int, last: Int, orderBy: CityOrderByInput, skip: Int, where: CityWhereInput): [City!]
     createdAt: DateTime!
     id: ID!
@@ -89,8 +91,6 @@ type Location {
     type: String!
 }
 
-union CustomUnion = Job | Company | Country | City
-
 type Mutation {
     postJob(input: PostJobInput!): Job!
     subscribe(input: SubscribeInput!): User!
@@ -105,12 +105,12 @@ type Query {
     companies: [Company!]!
     countries: [Country!]!
     country(input: LocationInput!): Country!
+    interfaces(input: InterfaceInput): [CustomInterface!]!
     job(input: JobInput!): Job!
     jobs(input: JobsInput): [Job!]!
     locations(input: LocationsInput!): [Location!]!
     remote(input: LocationInput!): Remote!
     remotes: [Remote!]!
-    interfaces(input: InterfaceInput): [CustomInterface!]!
     unions(input: UnionInput): [CustomUnion!]!
 }
 
@@ -724,6 +724,11 @@ input CountryWhereInput {
     updatedAt_not_in: [DateTime!]
 }
 
+input InterfaceInput {
+    default: Boolean! = true
+    id: ID!
+}
+
 input JobInput {
     companySlug: String!
     jobSlug: String!
@@ -1051,6 +1056,11 @@ input TagWhereInput {
     updatedAt_not_in: [DateTime!]
 }
 
+input UnionInput {
+    default: Boolean! = false
+    id: ID!
+}
+
 input UpdateCompanyInput {
     id: ID!
     logoUrl: String!
@@ -1107,12 +1117,4 @@ input fake__options {
     randomizeImageUrl: Boolean
     "Only for type `streetAddress`"
     useFullAddress: Boolean
-}
-
-input InterfaceInput {
-    id: ID!
-}
-
-input UnionInput {
-    id: ID!
 }

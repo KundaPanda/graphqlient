@@ -922,8 +922,10 @@ input UpdateJobInput {
 
 input InterfaceInput {
     id: ID!
+    default: Boolean! = true
 }
 
 input UnionInput {
     id: ID!
+    default: Boolean! = false
 }

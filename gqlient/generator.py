@@ -5,14 +5,13 @@ import gql
 from gql.dsl import DSLSchema
 from gql.transport.aiohttp import AIOHTTPTransport
 from gql.utilities import build_client_schema
-from graphql import GraphQLObjectType, build_schema
-from graphql.utilities import get_introspection_query, print_schema
-from jinja2 import Environment, FileSystemLoader, select_autoescape
-
 from gqlient.type_utils import (
     Constants, get_graphql_types, get_interface_types, get_type, get_union_types,
-    load_defined_types, my_underscore
+    has_default, load_defined_types, my_underscore, returns_many, sort_default_fields
 )
+from graphql import GraphQLObjectType, Undefined, UndefinedType, build_schema
+from graphql.utilities import get_introspection_query, print_schema
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 env = Environment(loader=FileSystemLoader(Path(__file__).parent / "templates"), autoescape=select_autoescape())
 
@@ -75,6 +74,9 @@ def generate(schema: Union[Path, str],
         get_union_types=get_union_types,
         get_interface_types=get_interface_types,
         underscore=my_underscore,
+        has_default=has_default,
+        sort_default_fields=sort_default_fields,
+        returns_many=returns_many
     )
 
     if client_output:

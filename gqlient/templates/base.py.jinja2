@@ -20,8 +20,27 @@ EMPTY = Empty
 
 PYTHON_VERSION = sys.version_info
 
+ExecuteReturnType = TypeVar('ExecuteReturnType')
+ExecuteReturnClass = TypeVar('ExecuteReturnClass')
 
-class Executable:
+
+class QueryResultBase:
+    def __init__(self, data: Dict[str, Any] = None):
+        self._data = data
+
+    def __getattr__(self, name: str) -> Any:
+        return self._data[name]
+
+    def __getitem__(self, name: str) -> Any:
+        return self._data[name]
+
+
+class QueryResult(QueryResultBase):
+    data: Dict[str, Any]
+    errors: Optional[List[Dict[str, Any]]]
+
+
+class Executable(Generic[ExecuteReturnType]):
     def __init__(self, selection):
         self._query = selection.query
         self.client = selection.client
@@ -39,7 +58,7 @@ class Executable:
     def query(self) -> str:
         return print_ast(self.query_ast)
 
-    def execute(self) -> Dict[str, Any]:
+    def execute(self) -> ExecuteReturnType:
         return self.client.client.execute(self.query_ast)
 
 

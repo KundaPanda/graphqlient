@@ -37,7 +37,7 @@ class {{ get_type(field.name, suffix=constants.root_selection) }}:
                 nested_fields.append(f.finish_select(fragment.on(getattr(self.schema, f.__class__.__name__.replace('{{ constants.selection }}', ''))), self.schema))
         self.query = self.query.select(*[getattr(self.schema.{{ get_type(field.type, replace_underscores=False) }}, f) for f in graphql_fields],
                                        *nested_fields)
-        return Executable(self)
+        return Executable[{{ type_name }}, {{ type_name if not returns_many(field) else 'List[' + type_name + ']' }}](self)
 
 {%- set return_type = get_type(field.name, suffix=constants.root_selection) %}
 
@@ -47,6 +47,9 @@ class {{ field.name }}(QueryableField):
         '{{ underscore(arg) }}': '{{ arg }}'{% if not loop.last %}{{ ', ' }}{% endif %}
     {%- endfor %}
     {{ '}' }}
+
+    def __init__(self, many=False):
+        self.many = many
 
     def __call__({{ 'self, *args, ' }}{%- for name, arg in field.args.items() -%}
         {{ underscore(name) }}{{ ': ' }}{{ get_type(arg.type) }}

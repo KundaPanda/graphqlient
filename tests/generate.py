@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import requests
+
 from generator import generate
 
 BASE_DIR = Path(__file__).parent
