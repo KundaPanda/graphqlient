@@ -4,9 +4,9 @@ from gqlient.generator import generate
 
 BASE_DIR = Path(__file__).parent
 
-generate(BASE_DIR / "countries/schema.graphql", client_output=BASE_DIR / "countries/generated/client_code.py")
+generate(BASE_DIR / "countries/schema.graphql", client_output=BASE_DIR / "countries/generated")
 
-from countries.generated.client_code import *
+from countries.generated.client import *
 
 client = Client(url="https://countries.trevorblades.com/")
 result = client.query.countries(

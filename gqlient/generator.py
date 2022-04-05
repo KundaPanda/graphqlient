@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Union, cast
+from typing import List, Optional, Union, cast
 
 import gql
 from gql.dsl import DSLSchema
@@ -16,22 +16,34 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 env = Environment(loader=FileSystemLoader(Path(__file__).parent / "templates"), autoescape=select_autoescape())
 
 query_template = env.get_template("base.py.jinja2")
+pyproject_template = env.get_template("pyproject.toml.jinja2")
 
 
-def generate(schema: Union[Path, str],
-             client_output: Optional[Union[str, Path]] = None,
-             write_schema: Optional[Union[str, Path]] = None) -> str:
-    if isinstance(schema, str):
-        if Path(schema).exists():
-            schema = Path(schema)
+def generate_pyproject(client_output: Path, package_name: str, version: Optional[str] = None,
+                       description: Optional[str] = None, authors: Optional[List[str]] = None):
+    if not authors:
+        authors = []
+    code = pyproject_template.render(
+        authors=authors,
+        package_name=package_name.replace('.', '_'),
+        include=package_name.split('.')[0],
+        version=version,
+        description=description
+    )
+
+    with open(client_output / 'pyproject.toml', "w+") as f:
+        f.write(code)
+
+
+def generate_client(schema, client_output, build_package=False):
     if isinstance(schema, Path):
         graphql_schema = build_schema(schema.read_text())
     else:
         client = gql.Client(transport=AIOHTTPTransport(url=schema))
         graphql_schema = client.execute(gql.gql(get_introspection_query()))
         graphql_schema = build_client_schema(graphql_schema)
-        if write_schema:
-            Path(write_schema).write_text(print_schema(graphql_schema))
+        if build_package:
+            (Path(client_output) / 'schema.graphql').write_text(print_schema(graphql_schema))
     schema = DSLSchema(graphql_schema)
 
     types = set()
@@ -80,7 +92,33 @@ def generate(schema: Union[Path, str],
     )
 
     if client_output:
-        with open(client_output, "w+") as f:
+        with open(client_output / 'client.py', "w+") as f:
             f.write(code)
+
+    return code
+
+
+def generate(schema: Union[Path, str],
+             client_output: Optional[Union[str, Path]] = None,
+             package_name: Optional[str] = None,
+             version: Optional[str] = None,
+             description: Optional[str] = None,
+             authors: Optional[List[str]] = None) -> str:
+    if isinstance(schema, str):
+        if Path(schema).exists():
+            schema = Path(schema)
+    if isinstance(client_output, str):
+        client_output = Path(client_output)
+    if client_output and not client_output.exists():
+        client_output.mkdir(parents=True, exist_ok=True)
+    package_path = ''
+    if package_name:
+        package_path = package_name.replace('.', '/')
+        (client_output / package_path).mkdir(parents=True, exist_ok=True)
+
+    code = generate_client(schema, client_output / package_path if client_output else None, package_name is not None)
+    if client_output and package_name:
+        generate_pyproject(client_output, package_name, version, description, authors)
+        (client_output / package_path / '__init__.py').touch()
 
     return code

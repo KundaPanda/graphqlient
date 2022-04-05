@@ -2,11 +2,16 @@
 Typed client code generator built on top of [GQL](https://github.com/graphql-python/gql).
 All fields are annotated with types, IDE auto-completion and hints should work.
 
-# Setup
+# Dev setup
 1. `poetry install`
 2. `poetry run python -m tests.generate`
-3. Use client generated in *tests/\*/generated/client_code.py*
+3. Use client generated in *tests/\*/generated/client.py*
 4. For mocked JOBS api - `docker run -d --rm -p 127.0.0.1:9002:9002 -v "$(pwd)/tests/graphql-faker:/mock" apisguru/graphql-faker /mock/schema.graphql`
+
+# Building client package
+
+1. `poetry install`
+2. `poetry run python -m gqlient.cli --help` for help
 
 # Roadmap
 - [x] Basic client generation

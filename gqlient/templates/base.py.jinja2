@@ -1,6 +1,7 @@
 {%- set union_type_names = union_types | map(attribute='name') | list -%}
 import asyncio
 import enum
+import json
 import sys
 from dataclasses import dataclass
 from functools import partial
@@ -22,10 +23,11 @@ PYTHON_VERSION = sys.version_info
 
 ExecuteReturnType = TypeVar('ExecuteReturnType')
 ExecuteReturnClass = TypeVar('ExecuteReturnClass')
+QueryResultType = TypeVar('QueryResultType')
 
 
-class QueryResultBase:
-    def __init__(self, data: Dict[str, Any] = None):
+class QueryResultBase(Generic[QueryResultType]):
+    def __init__(self, data: QueryResultType = None):
         self._data = data
 
     def __getattr__(self, name: str) -> Any:
@@ -34,16 +36,22 @@ class QueryResultBase:
     def __getitem__(self, name: str) -> Any:
         return self._data[name]
 
+    def __str__(self) -> str:
+        return json.dumps(self._data, indent=2, sort_keys=True)
 
-class QueryResult(QueryResultBase):
-    data: Dict[str, Any]
+    def get(self, name: str, default: Any = None) -> Any:
+        return self._data.get(name, default)
+
+
+class QueryResult(QueryResultBase[QueryResultType]):
+    data: QueryResultType
     errors: Optional[List[Dict[str, Any]]]
 
 
-class Executable(Generic[ExecuteReturnType]):
+class Executable(Generic[ExecuteReturnClass, ExecuteReturnType]):
     def __init__(self, selection):
-        self._query = selection.query
-        self.client = selection.client
+        self._query = selection._query
+        self.client = selection._client
 
     @property
     def query_ast(self):
@@ -58,8 +66,8 @@ class Executable(Generic[ExecuteReturnType]):
     def query(self) -> str:
         return print_ast(self.query_ast)
 
-    def execute(self) -> ExecuteReturnType:
-        return self.client.client.execute(self.query_ast)
+    def execute(self) -> QueryResult[ExecuteReturnType]:
+        return QueryResult(self.client.client.execute(self.query_ast))
 
 
 class QueryableField:
@@ -75,14 +83,14 @@ class GeneratedType(type):
 class GeneratedUnionType(GeneratedType):
     def __getattr__(self, item):
         if item == 'on':
-            return self.OnFragment
+            return self._OnFragment
         return getattr(super(), item)
 
 
 class GeneratedInterfaceType(GeneratedType):
     def __getattr__(self, item):
         if item == 'on':
-            return self.OnFragment
+            return self._OnFragment
         return getattr(super(), item)
 
 

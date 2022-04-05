@@ -45,7 +45,7 @@ class {{ get_type(type_, constants.field) }}(BaseField):
 
 @dataclass
 class {{ get_type(type_) }}(metaclass=GeneratedUnionType):
-    class OnFragment:
+    class _OnFragment:
         def __init__(self, on_type: {{ sub_types }}):
             self.on_type = on_type
 
@@ -93,7 +93,7 @@ class {{ get_type(type_, constants.field) }}(BaseField):
 
 @dataclass
 class {{ get_type(type_) }}(metaclass=GeneratedInterfaceType):
-    class OnFragment:
+    class _OnFragment:
         def __init__(self, on_type: {{ sub_types }}):
             self.on_type = on_type
 

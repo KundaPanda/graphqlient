@@ -14,30 +14,41 @@
 
 class {{ get_type(field.name, suffix=constants.root_selection) }}:
     def __init__(self, client: 'Client', schema: DSLSchema, query: Any, **kwargs) -> None:
-        {{ 'graphql_kwargs = {'}}{{ field.name }}{{'.__graphql_map__'}}[k]: (v if not isinstance(v, InputType) else v.to_graphql(schema))
-                          for k, v in kwargs.items() if v != EMPTY}
-        self.query = query
+        graphql_kwargs = {}
+        for k, v in kwargs.items():
+            if v == EMPTY:
+                continue
+            key = {{field.name}}.__graphql_map__[k]
+            if isinstance(v, InputType):
+                graphql_kwargs[key] = v.to_graphql(schema)
+            elif isinstance(v, list) and any(isinstance(x, InputType) for x in v):
+                graphql_kwargs[key] = [item.to_graphql(schema) for item in v]
+            else:
+                graphql_kwargs[key] = v
+
+        self._query = query
         if graphql_kwargs:
-            self.query = self.query(**graphql_kwargs)
-        self.schema = schema
-        self.client = client
+            self._query = self._query(**graphql_kwargs)
+        self._schema = schema
+        self._client = client
 
     {% set type_name = get_type(field.type) -%}
     {% set field_type = get_type(field.type, suffix=constants.field) -%}
-    def select(self, *fields: {{ field_type }}) -> Executable:
+    {% set return_type = type_name if not returns_many(field) else 'List[' + type_name + ']' %}
+    def select(self, *fields: {{ field_type }}) -> Executable[{{ type_name }}, {{ return_type }}]:
         graphql_fields = [f.field_name for f in fields if isinstance(f, {{ field_type }})]
         nested_fields = []
         for f in fields:
             if isinstance(f, {{ field_type }}):
                 continue
             if f.calling_field is not None:
-                nested_fields.append(f.finish_select(getattr(self.schema.{{ get_type(field.type, replace_underscores=False) }}, f.calling_field), self.schema))
+                nested_fields.append(f.finish_select(getattr(self._schema.{{ get_type(field.type, replace_underscores=False) }}, f.calling_field), self._schema))
             else:
                 fragment = DSLInlineFragment()
-                nested_fields.append(f.finish_select(fragment.on(getattr(self.schema, f.__class__.__name__.replace('{{ constants.selection }}', ''))), self.schema))
-        self.query = self.query.select(*[getattr(self.schema.{{ get_type(field.type, replace_underscores=False) }}, f) for f in graphql_fields],
+                nested_fields.append(f.finish_select(fragment.on(getattr(self._schema, f.__class__.__name__.replace('{{ constants.selection }}', ''))), self._schema))
+        self._query = self._query.select(*[getattr(self._schema.{{ get_type(field.type, replace_underscores=False) }}, f) for f in graphql_fields],
                                        *nested_fields)
-        return Executable[{{ type_name }}, {{ type_name if not returns_many(field) else 'List[' + type_name + ']' }}](self)
+        return Executable[{{ type_name }}, {{ return_type }}](self)
 
 {%- set return_type = get_type(field.name, suffix=constants.root_selection) %}
 
@@ -48,11 +59,8 @@ class {{ field.name }}(QueryableField):
     {%- endfor %}
     {{ '}' }}
 
-    def __init__(self, many=False):
-        self.many = many
-
     def __call__({{ 'self, *args, ' }}{%- for name, arg in field.args.items() -%}
-        {{ underscore(name) }}{{ ': ' }}{{ get_type(arg.type) }}
+        {{ underscore(name) }}{{ ': ' }}{{ get_type(arg.type, strip_class=False) }}
     {%- if 'Optional' in get_type(arg.type, strip_class=False) %}{{ ' = EMPTY' }}{% endif -%}
     {%- if not loop.last %}{{ ', ' }}{% endif %}
 {%- endfor -%}) -> {{ return_type }}:

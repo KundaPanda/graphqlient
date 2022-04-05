@@ -28,6 +28,6 @@ class Query:
 
 {% for field_name, field in query_fields.items() -%}
 {%- set is_union = get_type(field.type, strip_class=True) in union_type_names -%}
-    {{ '    ' }}{{ underscore(field_name) }}: {{ field.name }} = {{ field.name }}({%- if returns_many(field) %}many=True{%- endif %})
+    {{ '    ' }}{{ underscore(field_name) }}: {{ field.name }} = {{ field.name }}()
 {% endfor %}
 

@@ -1,8 +1,7 @@
 class TestSimpleMutations:
-    from generated.client_code import Client
-
-    def test_mutation(self, client: Client):
-        from generated.client_code import Job, PostJobInput, Company
+    def test_mutation(self, client):
+        from generated.client import Job, PostJobInput, Company, Client
+        client: Client
         mutation = client.mutation.post_job(
             input_=PostJobInput(apply_url="https://www.example.com", commitment_id='123', description="description",
                                 company_name='company', location_names='a,b,c', title='tester',
