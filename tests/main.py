@@ -23,7 +23,11 @@ result = client.query.countries(
 )
 
 print(result.query)
-print(result.execute())
+data = result.execute()
+for country in data.countries:
+    print(country.name)
+    for cont_country in country.continent.countries:
+        print(cont_country.name)
 
 r2 = client.query.entities_(
     representations=[{"__typename": "Country", "code": "CZ"},

@@ -1,0 +1,51 @@
+import json
+
+from dataclasses import dataclass
+from typing import Any, Dict, ForwardRef, Generic, Iterator, List, Optional, Type, TypeVar, Union, overload
+
+
+QueryResultType = TypeVar('QueryResultType')
+
+
+class QueryResult(Generic[QueryResultType]):
+    def __init__(self, data: QueryResultType = None):
+        self._data = data
+
+    def __getattr__(self, name: str) -> Any:
+        res = self._data[name]
+        if isinstance(res, list):
+            return [QueryResult(x) for x in res]
+        elif isinstance(res, dict):
+            return QueryResult(res)
+        return res
+
+    def __getitem__(self, name: str) -> Any:
+        return getattr(self, name)
+
+    def __str__(self) -> str:
+        return json.dumps(self._data, indent=2, sort_keys=True)
+
+    def as_dict(self) -> Dict[str, Any]:
+        return self._data
+
+    def get(self, name: str, default: Any = None) -> Any:
+        return self._data.get(name, default)
+{% set all_types = types -%}
+{% set _ = all_types.extend(interface_types) -%}
+{% for type_ in all_types %}
+
+@dataclass
+class {{ get_type(type_, constants.output) }}(QueryResult):
+    {{ '__graphql_map__ = {' }}{%  for field in type_.fields %}
+        '{{ underscore(field) }}': '{{ field }}'{% if not loop.last %}{{ ', ' }}{% endif %}
+    {%- endfor %}
+    {{ '}' }}
+
+    def __init__(self, data: QueryResultType = None):
+        self._data = {self.__graphql_map__[key]: value for key, value in data.items()}
+
+    {% for field_name, field in type_.fields.items() -%}
+        {{ underscore(field_name) }}: {{ get_type(field.type, suffix=constants.output, enquote=True, strip_class=False) }}
+    {% endfor %}
+
+{%- endfor %}

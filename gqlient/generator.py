@@ -15,7 +15,8 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 env = Environment(loader=FileSystemLoader(Path(__file__).parent / "templates"), autoescape=select_autoescape())
 
-query_template = env.get_template("base.py.jinja2")
+client_template = env.get_template("base.py.jinja2")
+result_template = env.get_template("result_types.py.jinja2")
 pyproject_template = env.get_template("pyproject.toml.jinja2")
 
 
@@ -71,31 +72,45 @@ def generate_client(schema, client_output, build_package=False):
     for name, field in mutation_fields.items():
         setattr(field, 'name', get_type(name, strip_class=True, suffix=Constants.mutation_field))
 
-    code = query_template.render(
+    types = sorted(types, key=lambda t: t.name)
+    interface_types = sorted(interface_types, key=lambda t: t.name)
+
+    client = client_template.render(
         api_url=schema if isinstance(schema, str) else None,
         query_fields=query_fields,
         mutation_fields=mutation_fields,
-        types=sorted(types, key=lambda t: t.name),
+        types=types,
         input_types=sorted(input_types, key=lambda t: t.name),
         enum_types=sorted(enum_types, key=lambda t: t.name),
         union_types=sorted(union_types, key=lambda t: t.name),
-        interface_types=sorted(interface_types, key=lambda t: t.name),
+        union_type_names=[get_type(t.name, strip_class=True) for t in union_types],
+        interface_types=interface_types,
         get_type=get_type,
         constants=Constants,
         get_graphql_types=get_graphql_types,
         get_union_types=get_union_types,
-        get_interface_types=get_interface_types,
-        underscore=my_underscore,
+        geterscore=my_underscore,
         has_default=has_default,
+        get_interface_types=get_interface_types,
         sort_default_fields=sort_default_fields,
-        returns_many=returns_many
+        returns_many=returns_many,
+        underscore=my_underscore,
+    )
+    result_types = result_template.render(
+        types=types,
+        interface_types=interface_types,
+        get_type=get_type,
+        constants=Constants,
+        underscore=my_underscore,
     )
 
     if client_output:
         with open(client_output / 'client.py', "w+") as f:
-            f.write(code)
+            f.write(client)
+        with open(client_output / 'result_types.py', "w+") as f:
+            f.write(result_types)
 
-    return code
+    return client
 
 
 def generate(schema: Union[Path, str],

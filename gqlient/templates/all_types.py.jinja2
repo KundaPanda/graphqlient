@@ -18,16 +18,16 @@ class {{ get_type(type_) }}(metaclass=GeneratedType):
     {% endfor %}
 
 class {{ get_type(type_, constants.selection) }}(Generic[{{ get_type(type_, constants.selection_type) }}]):
-    def __init__(self, calling_field: str):
-        self.calling_field = calling_field
-        self.finish_select = lambda: None
+    def __init__(self, _calling_field: str):
+        self._calling_field = _calling_field
+        self._finish_select = lambda: None
 
     {% set field_type = get_type(type_, suffix='Field') -%}
     def select(self, *fields: {{ field_type }}) -> {{ get_type(type_, constants.selection_type) }}:
         graphql_fields = [f.field_name for f in fields if isinstance(f, {{ field_type }})]
-        nested_selects = list(map(lambda f: lambda s: f.finish_select(getattr(s.{{ get_type(type_) }}, f.calling_field), s),  # type: ignore
+        nested_selects = list(map(lambda f: lambda s: f._finish_select(getattr(s.{{ get_type(type_) }}, f._calling_field), s),  # type: ignore
                                   filter(lambda f: not isinstance(f, {{ field_type }}), fields)))
-        self.finish_select = partial_select(list(map(lambda f: lambda s: getattr(s.{{ get_type(type_) }}, f), graphql_fields)) + nested_selects)
+        self._finish_select = partial_select(list(map(lambda f: lambda s: getattr(s.{{ get_type(type_) }}, f), graphql_fields)) + nested_selects)
         return self
 
 {% endfor %}
@@ -74,16 +74,16 @@ class {{ get_type(type_) }}(metaclass=GeneratedUnionType):
 
 
 class {{ get_type(type_, constants.selection) }}(Generic[{{ get_type(type_, constants.selection_type) }}]):
-    def __init__(self, calling_field: str):
-        self.calling_field = calling_field
-        self.finish_select = lambda: None
+    def __init__(self, _calling_field: str):
+        self._calling_field = _calling_field
+        self._finish_select = lambda: None
 
     {% set field_type = get_type(type_, suffix='Field') -%}
     def select(self, *fields: '{{ field_type }}') -> {{ get_type(type_, constants.selection_type) }}:
         graphql_fields = [f.field_name for f in fields if isinstance(f, {{ field_type }})]
-        nested_selects = list(map(lambda f: lambda s: f.finish_select(getattr(s.{{ get_type(type_) }}, f.calling_field), s),  # type: ignore
+        nested_selects = list(map(lambda f: lambda s: f._finish_select(getattr(s.{{ get_type(type_) }}, f._calling_field), s),  # type: ignore
                                   filter(lambda f: not isinstance(f, {{ field_type }}), fields)))
-        self.finish_select = partial_select(list(map(lambda f: lambda s: getattr(s.{{ get_type(type_) }}, f), graphql_fields)) + nested_selects)
+        self._finish_select = partial_select(list(map(lambda f: lambda s: getattr(s.{{ get_type(type_) }}, f), graphql_fields)) + nested_selects)
         return self
 
 

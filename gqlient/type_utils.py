@@ -9,7 +9,7 @@ from typing import Any, Dict, Set, cast
 
 from graphql import (
     GraphQLEnumType, GraphQLField,
-    GraphQLInputField, GraphQLInputObjectType, GraphQLInterfaceType, GraphQLObjectType,
+    GraphQLInputField, GraphQLInputObjectType, GraphQLInterfaceType, GraphQLList, GraphQLNonNull, GraphQLObjectType,
     GraphQLUnionType,
     Undefined, is_enum_type, is_input_object_type, is_interface_type, is_list_type,
     is_non_null_type,
@@ -30,6 +30,8 @@ class Constants(enum.Enum):
     field = 'Field'
     mutation_field = 'MutationField'
     query_field = 'QueryField'
+    output = 'Output'
+    field_output = 'FieldOutput'
 
     def __str__(self):
         return self.value
@@ -46,7 +48,7 @@ def my_underscore(s):
 
 def my_camelize(value):
     while value.startswith('_'):
-        return camelize(value[1:]) + '_'
+        value = value[1:] + '_'
     return camelize(value)
 
 
@@ -118,8 +120,10 @@ def load_defined_types(object_type: GraphQLObjectType, types: Set[GraphQLObjectT
                     enum_types.add(actual_type)
 
 
-def get_union_types(type_: GraphQLUnionType):
-    return 'Union[' + ', '.join('Type[' + get_type(sub_type, strip_class=True) + ']' for sub_type in type_.types) + ']'
+def get_union_types(type_: typing.Union[GraphQLUnionType, GraphQLNonNull, GraphQLList], suffix=Constants.empty):
+    if isinstance(type_, (GraphQLNonNull, GraphQLList)):
+        return get_union_types(type_.of_type, suffix)
+    return 'Union[' + ', '.join('Type[' + get_type(sub_type, strip_class=True, suffix=suffix) + ']' for sub_type in type_.types) + ']'
 
 
 def get_interface_types(type_: GraphQLInterfaceType):

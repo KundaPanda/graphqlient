@@ -1,4 +1,3 @@
-{%- set union_type_names = union_types | map(attribute='name') | list %}
 {%- set fields = query_fields.copy() %}
 {%- set _ = fields.update(mutation_fields) %}
 {% for field_name, field in fields.items() %}
@@ -11,6 +10,17 @@
         {%- endif %}
     {%- endfor -%}
 {% endif %}
+{% set type_name = get_type(field.type) -%}
+{% set field_type = get_type(field.type, suffix=constants.field) -%}
+{% if is_union -%}
+{% set return_type = get_union_types(field.type, suffix=constants.output) if not returns_many(field) else 'List[' + get_union_types(field.type, suffix=constants.output) + ']' -%}
+{% else -%}
+{% set return_type = get_type(field.type, suffix=constants.output) if not returns_many(field) else 'List[' + get_type(field.type, suffix=constants.output) + ']' -%}
+{% endif %}
+
+class {{ get_type(field.name, suffix=constants.field_output) }}(QueryResult):
+    {{ field_name }}: {{ return_type }}
+
 
 class {{ get_type(field.name, suffix=constants.root_selection) }}:
     def __init__(self, client: 'Client', schema: DSLSchema, query: Any, **kwargs) -> None:
@@ -32,23 +42,20 @@ class {{ get_type(field.name, suffix=constants.root_selection) }}:
         self._schema = schema
         self._client = client
 
-    {% set type_name = get_type(field.type) -%}
-    {% set field_type = get_type(field.type, suffix=constants.field) -%}
-    {% set return_type = type_name if not returns_many(field) else 'List[' + type_name + ']' %}
-    def select(self, *fields: {{ field_type }}) -> Executable[{{ type_name }}, {{ return_type }}]:
+    def select(self, *fields: {{ field_type }}) -> Executable[{{ type_name }}, {{ get_type(field.name, suffix=constants.field_output) }}]:
         graphql_fields = [f.field_name for f in fields if isinstance(f, {{ field_type }})]
         nested_fields = []
         for f in fields:
             if isinstance(f, {{ field_type }}):
                 continue
-            if f.calling_field is not None:
-                nested_fields.append(f.finish_select(getattr(self._schema.{{ get_type(field.type, replace_underscores=False) }}, f.calling_field), self._schema))
+            if f._calling_field is not None:
+                nested_fields.append(f._finish_select(getattr(self._schema.{{ get_type(field.type, replace_underscores=False) }}, f._calling_field), self._schema))
             else:
                 fragment = DSLInlineFragment()
-                nested_fields.append(f.finish_select(fragment.on(getattr(self._schema, f.__class__.__name__.replace('{{ constants.selection }}', ''))), self._schema))
+                nested_fields.append(f._finish_select(fragment.on(getattr(self._schema, f.__class__.__name__.replace('{{ constants.selection }}', ''))), self._schema))
         self._query = self._query.select(*[getattr(self._schema.{{ get_type(field.type, replace_underscores=False) }}, f) for f in graphql_fields],
                                        *nested_fields)
-        return Executable[{{ type_name }}, {{ return_type }}](self)
+        return Executable[{{ type_name }}, {{ get_type(field.name, suffix=constants.field_output) }}](self)
 
 {%- set return_type = get_type(field.name, suffix=constants.root_selection) %}
 

@@ -1,6 +1,7 @@
 # GraphQLient
-Typed client code generator built on top of [GQL](https://github.com/graphql-python/gql).
+Typed GraphQL client code generator built on top of [GQL](https://github.com/graphql-python/gql).
 All fields are annotated with types, IDE auto-completion and hints should work.
+Tries to make python-written queries easier instead of relying on the user to remember all correct and required types.
 
 # Dev setup
 1. `poetry install`
@@ -11,7 +12,7 @@ All fields are annotated with types, IDE auto-completion and hints should work.
 # Building client package
 
 1. `poetry install`
-2. `poetry run python -m gqlient.cli --help` for help
+2. `poetry run python -m gqlient.cli --help` for further instructions
 
 # Roadmap
 - [x] Basic client generation
@@ -21,8 +22,16 @@ All fields are annotated with types, IDE auto-completion and hints should work.
 - [x] Fragments, Unions, Interfaces
 - [x] Class renaming
 - [x] Mutations
+- [x] Hinting for return types
+- [x] Class-like access for returned data
+- [ ] Hinting for returned union/interface types
+- [ ] Separate client code to multiple modules
+- [ ] Add docstrings from graphql schema documentation
+- [ ] Eliminate duplicated code
+- [ ] Eliminate duplicated templates
 - [ ] Conditional imports
 - [ ] Tests
+- [ ] Documentation
 - [ ] Structured jinja templates
 - [ ] Well formatted Python code (spaces, blank lines, etc)
 - [ ] Client customization

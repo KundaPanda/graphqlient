@@ -1,4 +1,3 @@
-{%- set union_type_names = union_types | map(attribute='name') | list -%}
 import asyncio
 import enum
 import json
@@ -6,7 +5,8 @@ import sys
 from dataclasses import dataclass
 from functools import partial
 from graphql import print_ast
-from typing import Any, Dict, ForwardRef, Generic, List, Optional, Type, TypeVar, Union, overload
+from typing import Any, Dict, ForwardRef, Generic, Iterator, List, Optional, Type, TypeVar, Union, overload
+from .result_types import *
 
 import gql
 from gql.dsl import DSLMutation, DSLSchema, DSLSubscription, dsl_gql, DSLInlineFragment, DSLQuery
@@ -23,29 +23,6 @@ PYTHON_VERSION = sys.version_info
 
 ExecuteReturnType = TypeVar('ExecuteReturnType')
 ExecuteReturnClass = TypeVar('ExecuteReturnClass')
-QueryResultType = TypeVar('QueryResultType')
-
-
-class QueryResultBase(Generic[QueryResultType]):
-    def __init__(self, data: QueryResultType = None):
-        self._data = data
-
-    def __getattr__(self, name: str) -> Any:
-        return self._data[name]
-
-    def __getitem__(self, name: str) -> Any:
-        return self._data[name]
-
-    def __str__(self) -> str:
-        return json.dumps(self._data, indent=2, sort_keys=True)
-
-    def get(self, name: str, default: Any = None) -> Any:
-        return self._data.get(name, default)
-
-
-class QueryResult(QueryResultBase[QueryResultType]):
-    data: QueryResultType
-    errors: Optional[List[Dict[str, Any]]]
 
 
 class Executable(Generic[ExecuteReturnClass, ExecuteReturnType]):
@@ -66,8 +43,8 @@ class Executable(Generic[ExecuteReturnClass, ExecuteReturnType]):
     def query(self) -> str:
         return print_ast(self.query_ast)
 
-    def execute(self) -> QueryResult[ExecuteReturnType]:
-        return QueryResult(self.client.client.execute(self.query_ast))
+    def execute(self) -> ExecuteReturnType:
+        return QueryResult[ExecuteReturnType](self.client.client.execute(self.query_ast))
 
 
 class QueryableField:
@@ -123,8 +100,8 @@ class InputType:
 
 
 def partial_select(field_factories: List[Any]):
-    def select(calling_field: Any, schema: DSLSchema):
-        return calling_field.select(*[factory(schema) for factory in field_factories])
+    def select(_calling_field: Any, schema: DSLSchema):
+        return _calling_field.select(*[factory(schema) for factory in field_factories])
     return select
 
 {%- include 'query.py.jinja2' %}
