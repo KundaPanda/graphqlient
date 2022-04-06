@@ -1,7 +1,9 @@
 # GraphQLient
 Typed GraphQL client code generator built on top of [GQL](https://github.com/graphql-python/gql).
+
+Tries to make python-written queries easier instead of relying on the user to remember all the correct and required types.
+
 All fields are annotated with types, IDE auto-completion and hints should work.
-Tries to make python-written queries easier instead of relying on the user to remember all correct and required types.
 
 # Dev setup
 1. `poetry install`
@@ -24,7 +26,9 @@ Tries to make python-written queries easier instead of relying on the user to re
 - [x] Mutations
 - [x] Hinting for return types
 - [x] Class-like access for returned data
-- [ ] Hinting for returned union/interface types
+- [x] Hinting for returned union/interface types
+- [ ] Aliases
+- [ ] Better hinting for returned union/interface types (resolve field type clashes with aliases etc.)
 - [ ] Separate client code to multiple modules
 - [ ] Add docstrings from graphql schema documentation
 - [ ] Eliminate duplicated code

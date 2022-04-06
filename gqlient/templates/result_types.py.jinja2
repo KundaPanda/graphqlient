@@ -8,11 +8,16 @@ QueryResultType = TypeVar('QueryResultType')
 
 
 class QueryResult(Generic[QueryResultType]):
+    __graphql_map__ = {}
+
     def __init__(self, data: QueryResultType = None):
         self._data = data
 
     def __getattr__(self, name: str) -> Any:
-        res = self._data[name]
+        res = self._data[name] \
+            if name not in self.__graphql_map__ \
+            else self._data[self.__graphql_map__[name]]
+
         if isinstance(res, list):
             return [QueryResult(x) for x in res]
         elif isinstance(res, dict):
@@ -30,9 +35,7 @@ class QueryResult(Generic[QueryResultType]):
 
     def get(self, name: str, default: Any = None) -> Any:
         return self._data.get(name, default)
-{% set all_types = types -%}
-{% set _ = all_types.extend(interface_types) -%}
-{% for type_ in all_types %}
+{% for type_ in types %}
 
 @dataclass
 class {{ get_type(type_, constants.output) }}(QueryResult):
@@ -41,11 +44,50 @@ class {{ get_type(type_, constants.output) }}(QueryResult):
     {%- endfor %}
     {{ '}' }}
 
-    def __init__(self, data: QueryResultType = None):
-        self._data = {self.__graphql_map__[key]: value for key, value in data.items()}
-
     {% for field_name, field in type_.fields.items() -%}
         {{ underscore(field_name) }}: {{ get_type(field.type, suffix=constants.output, enquote=True, strip_class=False) }}
+    {% endfor %}
+
+{%- endfor %}
+{% for type_ in interface_types %}
+
+@dataclass
+class {{ get_type(type_, constants.output) }}(QueryResult):
+    {{ '__graphql_map__ = {' }}{%  for field in type_.all_fields %}
+        '{{ underscore(field) }}': '{{ field }}'{% if not loop.last %}{{ ', ' }}{% endif %}
+    {%- endfor %}
+    {{ '}' }}
+
+    {% for field_name, field in type_.all_fields.items() -%}
+        {{ underscore(field_name) }}: {{ get_type(field.type, suffix=constants.output, enquote=True, strip_class=False) }}
+    {% endfor %}
+
+{%- endfor %}
+{% for type_ in union_types %}
+
+@dataclass
+class {{ get_type(type_, constants.output) }}(QueryResult):
+    {{ '__graphql_map__ = {' }}{%  for field in type_.all_fields %}
+        '{{ underscore(field) }}': '{{ field }}'{% if not loop.last %}{{ ', ' }}{% endif %}
+    {%- endfor %}
+    {{ '}' }}
+
+    {% for field_name, field in type_.all_fields.items() -%}
+        {{ underscore(field_name) }}: {{ get_type(field.type, suffix=constants.output, enquote=True, strip_class=False) }}
+    {% endfor %}
+
+{%- endfor %}
+{% for type_ in enum_types %}
+
+@dataclass
+class {{ get_type(type_, constants.output) }}(QueryResult):
+    {{ '__graphql_map__ = {' }}{%  for field in type_.values %}
+        '{{ underscore(field) }}': '{{ field }}'{% if not loop.last %}{{ ', ' }}{% endif %}
+    {%- endfor %}
+    {{ '}' }}
+
+    {% for field_name, field in type_.values.items() -%}
+        {{ underscore(field_name) }} = '{{ field.value }}'
     {% endfor %}
 
 {%- endfor %}

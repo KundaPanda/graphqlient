@@ -15,13 +15,5 @@ class {{type_}}(InputType):
         {%- elif has_default(field) %}{{ ' = ' }}{{ field.default_value }}
         {%- endif %}
     {% endfor %}
-    def to_graphql(self, schema: DSLSchema):
-        values = {self.__graphql_map__[k]: getattr(self, k) for k in self.__graphql_map__ if getattr(self, k) != EMPTY}
-        for k in values:
-            if isinstance(values[k], InputType):
-                values[k] = values[k].to_graphql(schema)
-            elif isinstance(values[k], list) and any(isinstance(x, InputType) for x in values[k]):
-                values[k] = [item.to_graphql(schema) for item in values[k]]
-        return values
 
 {%- endfor %}

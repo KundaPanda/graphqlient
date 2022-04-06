@@ -52,4 +52,3 @@ r3 = client.query.continents(
     )
 ).execute()
 
-print(r3)

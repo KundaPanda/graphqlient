@@ -19,7 +19,11 @@
 {% endif %}
 
 class {{ get_type(field.name, suffix=constants.field_output) }}(QueryResult):
-    {{ field_name }}: {{ return_type }}
+    {{ '__graphql_map__ = {' }}
+        '{{ underscore(field_name) }}': '{{ field_name }}'
+    {{ '}' }}
+
+    {{ underscore(field_name) }}: {{ return_type }}
 
 
 class {{ get_type(field.name, suffix=constants.root_selection) }}:

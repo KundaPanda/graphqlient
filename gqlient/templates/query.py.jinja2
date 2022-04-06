@@ -13,18 +13,18 @@ class Query:
     }
 
     def __init__(self, client: 'Client') -> None:
-        self.schema = client.schema
-        self.client = client
+        self._schema = client._schema
+        self._client = client
 
     def __getattribute__(self, item):
         if item == '__annotations__':
-            return super(Query, self).__getattribute__(item)
+            return super().__getattribute__(item)
         item_type = self.__annotations__.get(item)
         if not item_type or not issubclass(item_type, QueryableField):
-            return super(Query, self).__getattribute__(item)
+            return super().__getattribute__(item)
         field = super().__getattribute__(item)
         graphql_name = self.__graphql_map__.get(item)
-        return partial(field, self.client, self.schema, getattr(self.schema.Query, graphql_name))
+        return partial(field, self._client, self._schema, getattr(self._schema.Query, graphql_name))
 
 {% for field_name, field in query_fields.items() -%}
 {%- set is_union = get_type(field.type, strip_class=True) in union_type_names -%}

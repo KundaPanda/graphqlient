@@ -1,3 +1,4 @@
+import itertools
 from pathlib import Path
 from typing import List, Optional, Union, cast
 
@@ -63,6 +64,12 @@ def generate_client(schema, client_output, build_package=False):
     for t in interface_types:
         # So that interfaces can be cast to unions (collect all their implementations)
         setattr(t, 'types', [type_ for type_ in types if t in type_.interfaces])
+        all_fields = dict(itertools.chain(*map(dict.items, [type_.fields for type_ in types if t in type_.interfaces])))
+        setattr(t, 'all_fields', all_fields)
+
+    for t in union_types:
+        all_fields = dict(itertools.chain(*map(dict.items, [type_.fields for type_ in t.types])))
+        setattr(t, 'all_fields', all_fields)
 
     query_fields = dict(sorted(query.fields.items(), key=lambda f: f[0]))  # type: ignore
     for name, field in query_fields.items():
@@ -74,6 +81,8 @@ def generate_client(schema, client_output, build_package=False):
 
     types = sorted(types, key=lambda t: t.name)
     interface_types = sorted(interface_types, key=lambda t: t.name)
+    union_types = sorted(union_types, key=lambda t: t.name)
+    enum_types = sorted(enum_types, key=lambda t: t.name)
 
     client = client_template.render(
         api_url=schema if isinstance(schema, str) else None,
@@ -81,8 +90,8 @@ def generate_client(schema, client_output, build_package=False):
         mutation_fields=mutation_fields,
         types=types,
         input_types=sorted(input_types, key=lambda t: t.name),
-        enum_types=sorted(enum_types, key=lambda t: t.name),
-        union_types=sorted(union_types, key=lambda t: t.name),
+        enum_types=enum_types,
+        union_types=union_types,
         union_type_names=[get_type(t.name, strip_class=True) for t in union_types],
         interface_types=interface_types,
         get_type=get_type,
@@ -99,6 +108,8 @@ def generate_client(schema, client_output, build_package=False):
     result_types = result_template.render(
         types=types,
         interface_types=interface_types,
+        union_types=union_types,
+        enum_types=enum_types,
         get_type=get_type,
         constants=Constants,
         underscore=my_underscore,
