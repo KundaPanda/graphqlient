@@ -50,6 +50,12 @@ class Executable(Generic[ExecuteReturnClass, ExecuteReturnType]):
         result.__graphql_map__.update(return_type.__graphql_map__)
         return result
 
+    async def execute_async(self) -> ExecuteReturnType:
+        result = QueryResult[ExecuteReturnType](await self.client._client.execute_async(self.query_ast))
+        return_type = get_args(self.__orig_class__)[1]
+        result.__graphql_map__.update(return_type.__graphql_map__)
+        return result
+
 
 class QueryableField:
     def __call__(self, *args, return_type: Type, **kwargs):
@@ -123,13 +129,30 @@ class Client:
         self._client = gql.Client(transport=AIOHTTPTransport(url=url, **kwargs))
         self._graphql_schema = None
         self._schema = None
-        asyncio.run(self._load_schema())
+        try:
+            loop = asyncio.get_running_loop()
+            self._load_schema_task = loop.create_task(self._load_schema())
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            loop.run_until_complete(self._load_schema())
+
+    async def __aenter__(self):
+        return await self.begin()
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        return self
 
     async def _load_schema(self):
         async with self._client as s:
             await s.fetch_schema()
         self._graphql_schema = self._client.schema
         self._schema = DSLSchema(self._graphql_schema)
+
+    async def begin(self):
+        if self._load_schema_task:
+            await self._load_schema_task
+            self._load_schema_task = None
+        return self
 
     @property
     def query(self) -> Query:

@@ -1,7 +1,7 @@
 # GraphQLient
 Typed GraphQL client code generator built on top of [GQL](https://github.com/graphql-python/gql).
 
-Tries to make python-written queries easier instead of relying on the user to remember all the correct and required types.
+Tries to make python-written queries easier instead of relying on the user to remember all the correct and required types (I mean who can remember the whole graphql schema of an API right).
 
 All fields are annotated with types, IDE auto-completion and hints should work.
 
