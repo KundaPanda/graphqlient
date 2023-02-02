@@ -1,8 +1,11 @@
 from pathlib import Path
 
-from generator import generate
+from gqlient.generator import generate
 
-BASE_DIR = Path(__file__).parent
+if __name__ == '__main__':
+    BASE_DIR = Path(__file__).parent
 
-generate(BASE_DIR / 'jobs/schema.graphql', client_output=BASE_DIR / 'jobs/generated')
-generate(BASE_DIR / 'countries/schema.graphql', client_output=BASE_DIR / 'countries/generated')
+    generate('http://localhost:8082/graphql/', BASE_DIR / 'netbox/generated')
+
+    # generate(BASE_DIR / 'jobs/schema.graphql', client_output=BASE_DIR / 'jobs/generated')
+    # generate(BASE_DIR / 'countries/schema.graphql', client_output=BASE_DIR / 'countries/generated')

@@ -2,23 +2,42 @@ import asyncio
 import enum
 import json
 import sys
+import warnings
 from abc import ABC
 from dataclasses import dataclass
 from functools import partial
-from graphql import print_ast
-from typing import Any, Dict, ForwardRef, Generic, Iterator, List, Optional, Type, TypeVar, Union, get_args, overload
-from .result_types import *
+from typing import (
+    Any,
+    Coroutine,
+    Dict,
+    ForwardRef,
+    Generic,
+    Iterator,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    get_args,
+    overload,
+)
 
 import gql
-from gql.dsl import DSLMutation, DSLSchema, DSLSubscription, dsl_gql, DSLInlineFragment, DSLQuery
+from gql.dsl import (
+    DSLInlineFragment,
+    DSLMutation,
+    DSLQuery,
+    DSLSchema,
+    DSLSubscription,
+    dsl_gql,
+)
 from gql.transport.aiohttp import AIOHTTPTransport
+from graphql import print_ast
+
+from .result_types import *
 
 
-class Empty:
-    pass
-
-
-EMPTY = Empty
+EMPTY = type('Empty', (), {})()
 
 PYTHON_VERSION = sys.version_info
 
@@ -129,30 +148,36 @@ class Client:
         self._client = gql.Client(transport=AIOHTTPTransport(url=url, **kwargs))
         self._graphql_schema = None
         self._schema = None
-        try:
-            loop = asyncio.get_running_loop()
-            self._load_schema_task = loop.create_task(self._load_schema())
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            loop.run_until_complete(self._load_schema())
+
+    def __enter__(self):
+        _run_in_loop(self.begin())
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._client.close_sync()
+        return self
 
     async def __aenter__(self):
-        return await self.begin()
+        await self.begin()
+        return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
         return self
 
     async def _load_schema(self):
         async with self._client as s:
             await s.fetch_schema()
         self._graphql_schema = self._client.schema
+        if not self._graphql_schema:
+            raise Exception("Unable to load remote schema.")
         self._schema = DSLSchema(self._graphql_schema)
 
     async def begin(self):
-        if self._load_schema_task:
-            await self._load_schema_task
-            self._load_schema_task = None
-        return self
+        await self._load_schema()
+
+    async def close(self):
+        await self._client.close_async()
 
     @property
     def query(self) -> Query:
@@ -161,3 +186,21 @@ class Client:
     @property
     def mutation(self) -> Mutation:
         return Mutation(client=self)
+
+
+def _run_in_loop(coro: Coroutine) -> None:
+    try:
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", message="There is no current event loop"
+            )
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    if loop.is_running():
+        raise RuntimeError(
+            "The asyncio loop must not be running in sync mode, please use the \'async with\' context manager instead.")
+
+    return loop.run_until_complete(coro)

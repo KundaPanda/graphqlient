@@ -3,7 +3,7 @@ class Mutation:
     {{'__graphql_map__ = {'}}{%  for field_name, field in mutation_fields.items() %}
         '{{ underscore(field_name) }}': '{{ field_name }}'{% if not loop.last %}{{ ', ' }}{% endif %}
     {%- endfor %}
-    }
+    {{'}'}}
 
     def __init__(self, client: 'Client') -> None:
         self._schema = client._schema
@@ -15,7 +15,7 @@ class Mutation:
         item_type = self.__annotations__.get(item)
         if not item_type or not issubclass(item_type, QueryableField):
             return super().__getattribute__(item)
-        field = super().__getattribute__(item)
+        field: QueryableField = super().__getattribute__(item)
         graphql_name = self.__graphql_map__.get(item)
         return partial(field, self._client, self._schema, getattr(self._schema.Mutation, graphql_name))
 
