@@ -1,22 +1,30 @@
-{%- set fields = query_fields.copy() %}
-{%- set _ = fields.update(mutation_fields) %}
-{% for field_name, field in fields.items() %}
-{%- set is_union = get_type(field.type) in union_type_names %}
+from gql.dsl import DSLInlineFragment, DSLSchema
+
+from .object_types import *
+from .result_types import *
+from typing import Any, List, Optional, Union, cast
+from .common import *
+
+{%- set fields = gql_types.query_fields.copy() %}
+{%- set _ = fields.update(gql_types.mutation_fields) %}
+{%- for field_name, field in fields.items() %}
+{%- set is_union = get_type(field.type) in gql_types.union_type_names %}
 {%- set union_type = [None] %}
 {%- if is_union -%}
-    {%- for union_type_ in union_types %}
+    {%- for union_type_ in gql_types.union_types %}
         {%- if union_type_.name == get_type(field.type) %}
             {%- set _ = union_type.append(union_type_) %}
         {%- endif %}
     {%- endfor -%}
-{% endif %}
-{% set type_name = get_type(field.type) -%}
-{% set field_type = get_type(field.type, suffix=constants.field) -%}
-{% if is_union -%}
-{% set return_type = get_union_types(field.type, suffix=constants.output) if not returns_many(field) else 'List[' + get_union_types(field.type, suffix=constants.output) + ']' -%}
-{% else -%}
-{% set return_type = get_type(field.type, suffix=constants.output) if not returns_many(field) else 'List[' + get_type(field.type, suffix=constants.output) + ']' -%}
-{% endif %}
+{%- endif %}
+{%- set type_name = get_type(field.type) -%}
+{%- set field_type = get_type(field.type, suffix=constants.field) -%}
+{%- if is_union -%}
+{%- set return_type = get_union_types(field.type, suffix=constants.output) if not returns_many(field) else 'List[' + get_union_types(field.type, suffix=constants.output) + ']' -%}
+{%- else -%}
+{%- set return_type = get_type(field.type, suffix=constants.output) if not returns_many(field) else 'List[' + get_type(field.type, suffix=constants.output) + ']' -%}
+{%- endif %}
+
 
 class {{ get_type(field.name, suffix=constants.field_output) }}(QueryResult):
     {{ '__graphql_map__ = {' }}

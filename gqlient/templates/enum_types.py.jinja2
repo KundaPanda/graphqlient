@@ -1,5 +1,6 @@
+import enum
 
-{% for enum_type in enum_types %}
+{% for enum_type in gql_types.enum_types %}
 
 class {{enum_type}}(enum.Enum):
     {{ '__graphql_map__ = {' }}{%  for field in enum_type.values %}

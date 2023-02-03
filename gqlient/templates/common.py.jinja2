@@ -1,0 +1,106 @@
+import asyncio
+import sys
+import warnings
+from abc import ABC
+from typing import (
+    Any,
+    Coroutine,
+    ForwardRef,
+    List,
+    Type,
+    Union,
+)
+
+from gql.dsl import (
+    DSLSchema,
+)
+
+EMPTY = type('Empty', (), {})()
+
+PYTHON_VERSION = sys.version_info
+
+
+class QueryableField:
+    def __call__(self, *args, return_type: Type, **kwargs):
+        client, schema, query, *_ = args
+        return return_type(client, schema, query, **kwargs)
+
+
+class GeneratedType(type):
+    Field: type
+
+
+class GeneratedUnionType(GeneratedType):
+    def __getattr__(self, item):
+        if item == 'on':
+            return self._OnFragment
+        return getattr(super(), item)
+
+
+class GeneratedInterfaceType(GeneratedType):
+    def __getattr__(self, item):
+        if item == 'on':
+            return self._OnFragment
+        return getattr(super(), item)
+
+
+# noinspection PyProtectedMember
+def evaluate_forward_ref(ref, globalns, localns):
+    if PYTHON_VERSION < (3, 9):
+        return ref._evaluate(globalns, localns)
+    return ref._evaluate(globalns, localns, frozenset())
+
+
+class BaseField:
+    def __init__(self, field_name: str, field_type: Union[Type, str]):
+        if isinstance(field_type, str):
+            field_type = ForwardRef(field_type)
+        self.field_name = field_name
+        self.field_type = field_type
+
+    def __getattr__(self, name):
+        if name == 'select':
+            return self.get_type()(self.field_name).select
+
+    def get_type(self):
+        if isinstance(self.field_type, ForwardRef):
+            return evaluate_forward_ref(
+                self.field_type, globals() | sys.modules[self.__module__].__dict__, locals()
+            )
+        return self.field_type
+
+
+class InputType(ABC):
+    __graphql_map__: dict
+
+    def to_graphql(self, schema: DSLSchema):
+        values = {self.__graphql_map__[k]: getattr(self, k) for k in self.__graphql_map__ if getattr(self, k) != EMPTY}
+        for k in values:
+            if isinstance(values[k], InputType):
+                values[k] = values[k].to_graphql(schema)
+            elif isinstance(values[k], list) and any(isinstance(x, InputType) for x in values[k]):
+                values[k] = [item.to_graphql(schema) for item in values[k]]
+        return values
+
+
+def partial_select(field_factories: List[Any]):
+    def select(_calling_field: Any, schema: DSLSchema):
+        return _calling_field.select(*[factory(schema) for factory in field_factories])
+    return select
+
+def run_in_loop(coro: Coroutine) -> None:
+    try:
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore", message="There is no current event loop"
+            )
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    if loop.is_running():
+        raise RuntimeError(
+            "The asyncio loop must not be running in sync mode, please use the \'async with\' context manager instead.")
+
+    return loop.run_until_complete(coro)

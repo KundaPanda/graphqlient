@@ -1,11 +1,18 @@
-import itertools
 from pathlib import Path
-from typing import List, Optional, TypedDict, Union, cast
+from typing import Any, List, Optional, Union, cast
 
 import gql
 from gql.dsl import DSLSchema
 from gql.transport.aiohttp import AIOHTTPTransport
 from gql.utilities import build_client_schema
+from graphql import (
+    GraphQLSchema,
+    IntrospectionQuery,
+    build_schema,
+)
+from graphql.utilities import get_introspection_query, print_schema
+from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
+
 from gqlient.type_utils import (
     Constants,
     get_graphql_types,
@@ -13,34 +20,26 @@ from gqlient.type_utils import (
     get_type,
     get_union_types,
     has_default,
-    load_defined_types,
+    load_types,
     my_underscore,
     returns_many,
     sort_default_fields,
 )
-from graphql import (
-    GraphQLEnumType,
-    GraphQLFieldMap,
-    GraphQLInputObjectType,
-    GraphQLInterfaceType,
-    GraphQLObjectType,
-    GraphQLSchema,
-    GraphQLUnionType,
-    IntrospectionQuery,
-    Undefined,
-    UndefinedType,
-    build_schema,
-)
-from graphql.utilities import get_introspection_query, print_schema
-from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 
 env = Environment(
     loader=FileSystemLoader(Path(__file__).parent / "templates"),
     autoescape=select_autoescape(),
 )
 
-client_template = env.get_template("base.py.jinja2")
+client_template = env.get_template("client.py.jinja2")
 result_template = env.get_template("result_types.py.jinja2")
+query_template = env.get_template("query.py.jinja2")
+mutation_template = env.get_template("mutation.py.jinja2")
+enum_types_template = env.get_template("enum_types.py.jinja2")
+input_types_template = env.get_template("input_types.py.jinja2")
+queryable_types_template = env.get_template("queryable_types.py.jinja2")
+object_types_template = env.get_template("all_types.py.jinja2")
+common_template = env.get_template("common.py.jinja2")
 pyproject_template = env.get_template("pyproject.toml.jinja2")
 
 
@@ -82,23 +81,8 @@ def _load_schema(schema: str | Path) -> tuple[GraphQLSchema, DSLSchema]:
     return graphql_schema, DSLSchema(graphql_schema)
 
 
-def generate_client(schema, client_output, build_package=False) -> dict[Template, str]:
-    graphql_schema, dsl_schema = _load_schema(schema)
-    if isinstance(schema, Path) and build_package:
-        (Path(client_output) / "schema.graphql").write_text(
-            print_schema(graphql_schema)
-        )
-
-    gql_types = _load_types(graphql_schema)
-
-    outputs = [
-        (client_template, client_output / "client.py"),
-        (result_template, client_output / "result_types.py"),
-    ]
-
-    kwargs = dict(
-        api_url=dsl_schema if isinstance(dsl_schema, str) else None,
-        gql_types=gql_types,
+def _prepare_template_kwargs() -> dict[str, Any]:
+    return dict(
         get_type=get_type,
         constants=Constants,
         get_graphql_types=get_graphql_types,
@@ -111,20 +95,45 @@ def generate_client(schema, client_output, build_package=False) -> dict[Template
         underscore=my_underscore,
     )
 
+
+def generate_client(schema, client_output, build_package=False) -> dict[Template, str]:
+    graphql_schema, dsl_schema = _load_schema(schema)
+    if isinstance(schema, Path) and build_package:
+        (Path(client_output) / "schema.graphql").write_text(
+            print_schema(graphql_schema)
+        )
+
+    gql_types = load_types(graphql_schema)
+
+    outputs = [
+        (client_template, client_output / "client.py"),
+        (result_template, client_output / "result_types.py"),
+        (common_template, client_output / "common.py"),
+        (queryable_types_template, client_output / "queryable_types.py"),
+        (enum_types_template, client_output / "enum_types.py"),
+        (input_types_template, client_output / "input_types.py"),
+        (mutation_template, client_output / "mutation.py"),
+        (query_template, client_output / "query.py"),
+        (object_types_template, client_output / "object_types.py"),
+    ]
+
+    print("Generating client files...")
+
+    kwargs = dict(
+        **_prepare_template_kwargs(),
+        api_url=dsl_schema if isinstance(dsl_schema, str) else None,
+        gql_types=gql_types,
+    )
+
     return {
         template: _render_file(template, output, **kwargs)
         for template, output in outputs
     }
 
 
-def generate(
-    schema: Union[Path, str],
-    client_output: Optional[Union[str, Path]] = None,
-    package_name: Optional[str] = None,
-    version: Optional[str] = None,
-    description: Optional[str] = None,
-    authors: Optional[List[str]] = None,
-) -> dict[Template, str]:
+def _prepare_paths(
+    schema: str | Path, client_output: str | Path | None, package_name: str | None
+) -> tuple[str, Path | None]:
     if isinstance(schema, str):
         if Path(schema).exists():
             schema = Path(schema)
@@ -137,14 +146,26 @@ def generate(
         package_path = package_name.replace(".", "/")
         if client_output:
             (client_output / package_path).mkdir(parents=True, exist_ok=True)
+    return package_path, client_output
+
+
+def generate(
+    schema: Union[Path, str],
+    client_output: Optional[Union[str, Path]] = None,
+    package_name: Optional[str] = None,
+    version: Optional[str] = None,
+    description: Optional[str] = None,
+    authors: Optional[List[str]] = None,
+) -> dict[Template, str]:
+    package_path, output_path = _prepare_paths(schema, client_output, package_name)
 
     code = generate_client(
         schema,
-        client_output / package_path if client_output else None,
+        output_path / package_path if output_path else None,
         package_name is not None,
     )
-    if client_output and package_name:
-        generate_pyproject(client_output, package_name, version, description, authors)
-        (client_output / package_path / "__init__.py").touch()
+    if output_path and package_name:
+        generate_pyproject(output_path, package_name, version, description, authors)
+        (output_path / output_path / "__init__.py").touch()
 
     return code

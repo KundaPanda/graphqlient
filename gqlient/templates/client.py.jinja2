@@ -1,0 +1,54 @@
+import gql
+from gql.dsl import (
+    DSLSchema,
+)
+from gql.transport.aiohttp import AIOHTTPTransport
+
+from .mutation import *
+from .query import *
+from .common import *
+
+
+class Client:
+    def __init__(self, url: str, **kwargs):
+        self._client = gql.Client(transport=AIOHTTPTransport(url=url, **kwargs))
+        self._graphql_schema = None
+        self._schema = None
+
+    def __enter__(self):
+        run_in_loop(self.begin())
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._client.close_sync()
+        return self
+
+    async def __aenter__(self):
+        await self.begin()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
+        return self
+
+    async def _load_schema(self):
+        async with self._client as s:
+            await s.fetch_schema()
+        self._graphql_schema = self._client.schema
+        if not self._graphql_schema:
+            raise Exception("Unable to load remote schema.")
+        self._schema = DSLSchema(self._graphql_schema)
+
+    async def begin(self):
+        await self._load_schema()
+
+    async def close(self):
+        await self._client.close_async()
+
+    @property
+    def query(self) -> Query:
+        return Query(client=self)
+
+    @property
+    def mutation(self) -> Mutation:
+        return Mutation(client=self)

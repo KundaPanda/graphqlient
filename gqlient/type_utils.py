@@ -218,7 +218,7 @@ def sort_default_fields(fields: Dict[str, GraphQLInputField]):
 
 
 def returns_many(field: GraphQLField):
-    ft = cast(type[GraphQLOutputType], field.type)
+    ft = type(field.type)
     return isinstance(GraphQLList, ft) or (
         isinstance(GraphQLNonNull, ft)
         and isinstance(GraphQLList, cast(GraphQLNonNull, ft).of_type)

@@ -1,9 +1,10 @@
 {
     "python.formatting.provider": "black",
-    "python.linting.flake8Enabled": true,
-    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": false,
+    "python.linting.enabled": false,
     "cSpell.words": [
         "AIOHTTP",
         "enquote"
-    ]
+    ],
+    "python.linting.mypyEnabled": true
 }

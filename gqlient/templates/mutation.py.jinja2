@@ -1,6 +1,14 @@
+from functools import partial
+from .result_types import *
+from .enum_types import *
+from .input_types import *
+from .queryable_types import *
+from .object_types import *
+from .common import *
+
 
 class Mutation:
-    {{'__graphql_map__ = {'}}{%  for field_name, field in mutation_fields.items() %}
+    {{'__graphql_map__ = {'}}{%  for field_name, field in gql_types.mutation_fields.items() %}
         '{{ underscore(field_name) }}': '{{ field_name }}'{% if not loop.last %}{{ ', ' }}{% endif %}
     {%- endfor %}
     {{'}'}}
@@ -19,7 +27,7 @@ class Mutation:
         graphql_name = self.__graphql_map__.get(item)
         return partial(field, self._client, self._schema, getattr(self._schema.Mutation, graphql_name))
 
-{% for field_name, field in mutation_fields.items() -%}
-{%- set is_union = get_type(field.type, strip_class=True) in union_type_names -%}
+{% for field_name, field in gql_types.mutation_fields.items() -%}
+{%- set is_union = get_type(field.type, strip_class=True) in gql_types.union_type_names -%}
     {{ '    ' }}{{ underscore(field_name) }}: {{ field.name }} = {{ field.name }}()
 {% endfor %}

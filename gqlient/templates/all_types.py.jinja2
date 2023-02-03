@@ -1,5 +1,9 @@
+from typing import TypeVar, Any, Generic, overload
+from dataclasses import dataclass
+from .common import *
 
-{% for type_ in types %}
+
+{% for type_ in gql_types.types %}
 {{ get_type(type_, suffix=constants.selection_type) }} = TypeVar('{{ get_type(type_, suffix=constants.selection_type) }}')
 
 
@@ -33,7 +37,7 @@ class {{ get_type(type_, constants.selection) }}(Generic[{{ get_type(type_, cons
 {% endfor %}
 
 
-{%- for type_ in union_types %}
+{%- for type_ in gql_types.union_types %}
 {%- set sub_types = get_union_types(type_) %}
 {{ get_type(type_, constants.field_type) }} = TypeVar('{{ get_type(type_, constants.field_type) }}')
 {{ get_type(type_, constants.selection_type) }} = TypeVar('{{ get_type(type_, constants.selection_type) }}')
@@ -67,7 +71,7 @@ class {{ get_type(type_) }}(metaclass=GeneratedUnionType):
 
 {% endfor %}
 
-{%- for type_ in interface_types %}
+{%- for type_ in gql_types.interface_types %}
 {%- set sub_types = get_interface_types(type_) %}
 {{ get_type(type_, constants.field_type) }} = TypeVar('{{ get_type(type_, constants.field_type) }}')
 {{ get_type(type_, constants.selection_type) }} = TypeVar('{{ get_type(type_, constants.selection_type) }}')
